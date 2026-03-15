@@ -246,14 +246,6 @@
 
     btnAdd.addEventListener('click', addOrSaveStudent);
 
-    inputName.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') addOrSaveStudent();
-    });
-
-    inputId.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') addOrSaveStudent();
-    });
-
     btnCancelEdit.addEventListener('click', cancelEdit);
 
     function addOrSaveStudent() {
@@ -280,7 +272,7 @@
 
         inputName.value = '';
         inputId.value = '';
-        inputGender.value = '';
+        inputGender.value = 'M';
         inputName.focus();
 
         updateStudentList();
@@ -315,7 +307,7 @@
         editingIndex = -1;
         inputName.value = '';
         inputId.value = '';
-        inputGender.value = '';
+        inputGender.value = 'M';
         btnAdd.textContent = '+ Add';
         btnAdd.classList.remove('editing');
         btnCancelEdit.classList.add('hidden');
@@ -468,6 +460,9 @@
 
         Effects.hideWinnerBurst();
         currentNameDisplay.classList.add('hidden');
+
+        // Start ambient BGM A
+        SoundEngine.startBgmA();
     });
 
     // ---- Back Button ----
@@ -477,6 +472,7 @@
         inputPanel.classList.remove('hidden');
         Effects.hideWinnerBurst();
         currentNameDisplay.classList.add('hidden');
+        SoundEngine.stopBgmA();
     });
 
     // ---- Spin Button ----
@@ -512,6 +508,7 @@
 
         btnSpin.classList.add('spinning');
         Effects.startButtonLightShow(btnSpin);
+        SoundEngine.stopBgmA();
         SoundEngine.playSpinMusic();
 
         LuckyWheel.spin(
@@ -543,6 +540,8 @@
                     Effects.showWinnerBurst();
                     Effects.launchConfetti(5000);
                     SoundEngine.playFanfare();
+                    // Resume ambient BGM A after fanfare
+                    setTimeout(() => SoundEngine.startBgmA(), 2000);
                 }, 300);
             },
             // Segment change callback

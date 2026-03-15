@@ -203,13 +203,41 @@ const LuckyWheel = (() => {
             ctx.fill();
             ctx.restore();
 
-            // Segment border
+            // --- 3D beveled edges between segments ---
+            // Light edge (top/left of boundary)
             ctx.beginPath();
             ctx.moveTo(centerX, centerY);
-            ctx.arc(centerX, centerY, wheelRadius, startAngle, endAngle);
-            ctx.closePath();
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.18)';
-            ctx.lineWidth = 1;
+            ctx.lineTo(
+                centerX + Math.cos(startAngle) * wheelRadius,
+                centerY + Math.sin(startAngle) * wheelRadius
+            );
+            ctx.strokeStyle = `hsla(${hue}, ${Math.min(sat + 10, 100)}%, ${Math.min(light + 22, 90)}%, 0.6)`;
+            ctx.lineWidth = 2.5;
+            ctx.stroke();
+
+            // Dark edge (bottom/right of boundary)
+            ctx.beginPath();
+            ctx.moveTo(centerX, centerY);
+            ctx.lineTo(
+                centerX + Math.cos(endAngle) * wheelRadius,
+                centerY + Math.sin(endAngle) * wheelRadius
+            );
+            ctx.strokeStyle = `hsla(${hue}, ${sat}%, ${Math.max(light - 18, 8)}%, 0.7)`;
+            ctx.lineWidth = 2.5;
+            ctx.stroke();
+
+            // Outer arc rim highlight
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, wheelRadius - 1.5, startAngle, endAngle);
+            ctx.strokeStyle = `hsla(${hue}, 100%, ${light + 18}%, 0.25)`;
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // Inner groove near hub
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, hubRadius + 8, startAngle, endAngle);
+            ctx.strokeStyle = `rgba(0, 0, 0, 0.25)`;
+            ctx.lineWidth = 1.5;
             ctx.stroke();
 
             drawSegmentText(i, startAngle, sliceAngle);
@@ -224,35 +252,70 @@ const LuckyWheel = (() => {
         const midAngle = startAngle + sliceAngle / 2;
         const n = students.length;
 
-        const textRadius = wheelRadius * 0.62;
-        const tx = centerX + Math.cos(midAngle) * textRadius;
-        const ty = centerY + Math.sin(midAngle) * textRadius;
+        let fontSize = 16;
+        if (n > 12) fontSize = 14;
+        if (n > 20) fontSize = 12;
+        if (n > 30) fontSize = 10;
+        if (n > 45) fontSize = 9;
+        if (n > 60) fontSize = 7;
 
         ctx.save();
-        ctx.translate(tx, ty);
-        ctx.rotate(midAngle + Math.PI / 2);
-
-        let fontSize = 18;
-        if (n > 12) fontSize = 16;
-        if (n > 20) fontSize = 14;
-        if (n > 30) fontSize = 12;
-        if (n > 45) fontSize = 10;
-        if (n > 60) fontSize = 8;
-
         ctx.font = `bold ${fontSize}px 'Segoe UI', sans-serif`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
 
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
-        ctx.fillText(student.name, 1, 1);
+        // Draw text radially: first character near center, last near rim
+        const name = student.name;
+        const charSpacing = fontSize * 1.15;
+        const totalTextLen = name.length * charSpacing;
+        const availableLen = wheelRadius - hubRadius - 30;
+        const actualSpacing = Math.min(charSpacing, availableLen / Math.max(name.length, 1));
 
-        ctx.fillStyle = '#ffffff';
-        ctx.fillText(student.name, 0, 0);
+        // Start position: near hub, moving outward
+        const startR = hubRadius + 20 + actualSpacing * 0.5;
 
+        for (let c = 0; c < name.length; c++) {
+            const r = startR + c * actualSpacing;
+            if (r > wheelRadius - 8) break; // don't draw past rim
+
+            const cx = centerX + Math.cos(midAngle) * r;
+            const cy = centerY + Math.sin(midAngle) * r;
+
+            ctx.save();
+            ctx.translate(cx, cy);
+            // Rotate so character faces outward along the radius
+            ctx.rotate(midAngle + Math.PI / 2);
+
+            // Shadow
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.55)';
+            ctx.fillText(name[c], 1, 1);
+            // White text
+            ctx.fillStyle = '#ffffff';
+            ctx.fillText(name[c], 0, 0);
+
+            ctx.restore();
+        }
+
+        // Student ID (smaller, placed along radius after the name)
         if (n <= 25 && student.studentId) {
-            ctx.font = `${Math.max(fontSize - 3, 7)}px 'Segoe UI', sans-serif`;
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.75)';
-            ctx.fillText(student.studentId, 0, fontSize + 2);
+            const idFontSize = Math.max(fontSize - 3, 7);
+            ctx.font = `${idFontSize}px 'Segoe UI', sans-serif`;
+
+            const idStartR = startR + name.length * actualSpacing + 4;
+            for (let c = 0; c < student.studentId.length; c++) {
+                const r = idStartR + c * idFontSize * 1.0;
+                if (r > wheelRadius - 6) break;
+
+                const cx = centerX + Math.cos(midAngle) * r;
+                const cy = centerY + Math.sin(midAngle) * r;
+
+                ctx.save();
+                ctx.translate(cx, cy);
+                ctx.rotate(midAngle + Math.PI / 2);
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.65)';
+                ctx.fillText(student.studentId[c], 0, 0);
+                ctx.restore();
+            }
         }
 
         ctx.restore();

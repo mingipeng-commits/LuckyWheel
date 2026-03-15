@@ -219,7 +219,109 @@ const SoundEngine = (() => {
         }
     }
 
-    // ---- Spin Music: upbeat synth loop ----
+    // ---- BGM A: Ambient idle music (plays on wheel screen, before/after spin) ----
+    let bgmANodes = null;
+
+    function startBgmA() {
+        const ctx = ensureContext();
+        if (!ctx) return;
+        stopBgmA();
+
+        const master = ctx.createGain();
+        master.gain.value = 0;
+        master.connect(ctx.destination);
+        master.gain.setTargetAtTime(0.10, ctx.currentTime, 0.8);
+
+        const now = ctx.currentTime;
+        const allSrcs = [];
+
+        // Warm pad: two detuned sine oscillators with slow LFO volume
+        const padGain = ctx.createGain();
+        padGain.gain.value = 0.4;
+        padGain.connect(master);
+
+        const padChords = [
+            [261.63, 329.63, 392.00],  // C4 E4 G4
+            [293.66, 369.99, 440.00],  // D4 F#4 A4
+            [246.94, 311.13, 369.99],  // B3 Eb4 F#4
+            [261.63, 311.13, 392.00],  // C4 Eb4 G4
+        ];
+        const chordDur = 4.0; // seconds per chord
+        const totalPadDur = padChords.length * chordDur;
+        const padLoops = Math.ceil(120 / totalPadDur); // ~2 min
+
+        for (let loop = 0; loop < padLoops; loop++) {
+            padChords.forEach((chord, ci) => {
+                chord.forEach(freq => {
+                    const osc = ctx.createOscillator();
+                    const env = ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.value = freq;
+
+                    const t = now + loop * totalPadDur + ci * chordDur;
+                    env.gain.setValueAtTime(0, t);
+                    env.gain.linearRampToValueAtTime(0.12, t + 0.8);
+                    env.gain.setValueAtTime(0.12, t + chordDur - 0.8);
+                    env.gain.linearRampToValueAtTime(0, t + chordDur);
+
+                    const lpf = ctx.createBiquadFilter();
+                    lpf.type = 'lowpass';
+                    lpf.frequency.value = 800;
+
+                    osc.connect(lpf);
+                    lpf.connect(env);
+                    env.connect(padGain);
+                    osc.start(t);
+                    osc.stop(t + chordDur + 0.1);
+                    allSrcs.push(osc);
+                });
+            });
+        }
+
+        // Gentle arpeggiated bell tones
+        const bellGain = ctx.createGain();
+        bellGain.gain.value = 0.25;
+        bellGain.connect(master);
+
+        const bellNotes = [523.25, 659.25, 783.99, 659.25, 523.25, 392.00, 440.00, 523.25];
+        const bellInterval = 1.5;
+        const bellLoopDur = bellNotes.length * bellInterval;
+        const bellLoops = Math.ceil(120 / bellLoopDur);
+
+        for (let loop = 0; loop < bellLoops; loop++) {
+            bellNotes.forEach((freq, i) => {
+                const osc = ctx.createOscillator();
+                const env = ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.value = freq;
+
+                const t = now + loop * bellLoopDur + i * bellInterval;
+                env.gain.setValueAtTime(0, t);
+                env.gain.linearRampToValueAtTime(0.1, t + 0.02);
+                env.gain.exponentialRampToValueAtTime(0.001, t + 1.2);
+
+                osc.connect(env);
+                env.connect(bellGain);
+                osc.start(t);
+                osc.stop(t + 1.3);
+                allSrcs.push(osc);
+            });
+        }
+
+        bgmANodes = { master, allSrcs, ctx };
+    }
+
+    function stopBgmA() {
+        if (!bgmANodes) return;
+        const { master, allSrcs, ctx } = bgmANodes;
+        master.gain.setTargetAtTime(0, ctx.currentTime, 0.3);
+        setTimeout(() => {
+            allSrcs.forEach(s => { try { s.stop(); } catch (e) {} });
+        }, 1500);
+        bgmANodes = null;
+    }
+
+    // ---- BGM B: Spin Music (upbeat synth loop) ----
     let spinMusicNodes = null;
 
     function playSpinMusic() {
@@ -415,6 +517,8 @@ const SoundEngine = (() => {
         playWhoosh,
         playFanfare,
         playDrumRoll,
+        startBgmA,
+        stopBgmA,
         playSpinMusic,
         stopSpinMusic
     };
