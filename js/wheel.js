@@ -283,8 +283,8 @@ const LuckyWheel = (() => {
 
             ctx.save();
             ctx.translate(cx, cy);
-            // Rotate so character faces outward along the radius
-            ctx.rotate(midAngle + Math.PI / 2);
+            // Rotate so character top faces the rim/edge
+            ctx.rotate(midAngle - Math.PI / 2);
 
             // Shadow
             ctx.fillStyle = 'rgba(0, 0, 0, 0.55)';
@@ -311,7 +311,7 @@ const LuckyWheel = (() => {
 
                 ctx.save();
                 ctx.translate(cx, cy);
-                ctx.rotate(midAngle + Math.PI / 2);
+                ctx.rotate(midAngle - Math.PI / 2);
                 ctx.fillStyle = 'rgba(255, 255, 255, 0.65)';
                 ctx.fillText(student.studentId[c], 0, 0);
                 ctx.restore();
