@@ -240,35 +240,85 @@
         return null;
     }
 
-    // ---- Manual Input ----
-    btnAdd.addEventListener('click', addStudent);
+    // ---- Manual Input + Edit ----
+    let editingIndex = -1; // -1 = adding new, >= 0 = editing that index
+    const btnCancelEdit = document.getElementById('btn-cancel-edit');
+
+    btnAdd.addEventListener('click', addOrSaveStudent);
 
     inputName.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') addStudent();
+        if (e.key === 'Enter') addOrSaveStudent();
     });
 
     inputId.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') addStudent();
+        if (e.key === 'Enter') addOrSaveStudent();
     });
 
-    function addStudent() {
+    btnCancelEdit.addEventListener('click', cancelEdit);
+
+    function addOrSaveStudent() {
         const name = inputName.value.trim();
         if (!name) {
             inputName.focus();
             return;
         }
 
-        students.push({
-            name: name,
-            studentId: inputId.value.trim(),
-            gender: inputGender.value
-        });
+        if (editingIndex >= 0 && editingIndex < students.length) {
+            // Update existing
+            students[editingIndex].name = name;
+            students[editingIndex].studentId = inputId.value.trim();
+            students[editingIndex].gender = inputGender.value;
+            cancelEdit();
+        } else {
+            // Add new
+            students.push({
+                name: name,
+                studentId: inputId.value.trim(),
+                gender: inputGender.value
+            });
+        }
 
         inputName.value = '';
         inputId.value = '';
         inputGender.value = '';
         inputName.focus();
 
+        updateStudentList();
+    }
+
+    function startEdit(index) {
+        if (index < 0 || index >= students.length) return;
+        editingIndex = index;
+        const s = students[index];
+
+        inputName.value = s.name;
+        inputId.value = s.studentId || '';
+        inputGender.value = s.gender || '';
+
+        btnAdd.textContent = 'Save';
+        btnAdd.classList.add('editing');
+        btnCancelEdit.classList.remove('hidden');
+
+        // Switch to manual tab if not already there
+        tabBtns.forEach(b => b.classList.remove('active'));
+        document.querySelector('[data-tab="manual"]').classList.add('active');
+        tabUpload.classList.remove('active');
+        tabManual.classList.add('active');
+
+        inputName.focus();
+
+        // Highlight the row being edited
+        updateStudentList();
+    }
+
+    function cancelEdit() {
+        editingIndex = -1;
+        inputName.value = '';
+        inputId.value = '';
+        inputGender.value = '';
+        btnAdd.textContent = '+ Add';
+        btnAdd.classList.remove('editing');
+        btnCancelEdit.classList.add('hidden');
         updateStudentList();
     }
 
@@ -297,7 +347,7 @@
         studentList.innerHTML = '';
         students.forEach((s, i) => {
             const item = document.createElement('div');
-            item.className = 'student-item';
+            item.className = 'student-item' + (i === editingIndex ? ' editing' : '');
 
             const genderLabel = s.gender === 'M' ? 'Male' : s.gender === 'F' ? 'Female' : s.gender || '';
 
@@ -307,15 +357,27 @@
                     ${s.studentId ? `<span class="student-item-id">${escapeHtml(s.studentId)}</span>` : ''}
                     ${genderLabel ? `<span class="student-item-gender">${escapeHtml(genderLabel)}</span>` : ''}
                 </div>
-                <button class="btn-delete" data-index="${i}" title="Remove">&times;</button>
+                <div class="student-item-actions">
+                    <button class="btn-edit" data-index="${i}" title="Edit">Edit</button>
+                    <button class="btn-delete" data-index="${i}" title="Remove">&times;</button>
+                </div>
             `;
 
             studentList.appendChild(item);
         });
 
+        studentList.querySelectorAll('.btn-edit').forEach(btn => {
+            btn.addEventListener('click', () => {
+                startEdit(parseInt(btn.dataset.index));
+            });
+        });
+
         studentList.querySelectorAll('.btn-delete').forEach(btn => {
             btn.addEventListener('click', () => {
                 const idx = parseInt(btn.dataset.index);
+                // If deleting the one being edited, cancel edit
+                if (idx === editingIndex) cancelEdit();
+                else if (idx < editingIndex) editingIndex--;
                 students.splice(idx, 1);
                 updateStudentList();
             });
