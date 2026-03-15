@@ -111,7 +111,7 @@ body {
     justify-content: center;
     align-items: center;
     min-height: 100vh;
-    padding: 20px;
+    padding: 20px 10px;
 }
 
 /* ============================================
@@ -532,34 +532,55 @@ select.form-input option {
    ============================================ */
 .wheel-container {
     display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 12px;
+    align-items: flex-start;
+    justify-content: center;
     width: 100%;
-    max-width: 1100px;
 }
 
 .wheel-container.hidden {
     display: none;
 }
 
-.wheel-top-bar {
+/* Wheel Stage: wheel + sidebar side by side */
+.wheel-stage {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 16px;
     width: 100%;
-    padding: 0 10px;
+    max-width: 900px;
+}
+
+/* Wheel Frame */
+.wheel-frame {
+    position: relative;
+    width: 600px;
+    height: 600px;
+    flex-shrink: 0;
+}
+
+/* Right Sidebar: controls + history stacked vertically */
+.wheel-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 220px;
+    flex-shrink: 0;
+    padding-top: 10px;
 }
 
 .btn-back {
     background: none;
     border: 1px solid rgba(255, 0, 255, 0.3);
     color: var(--text-secondary);
-    padding: 8px 20px;
+    padding: 10px 0;
     border-radius: 10px;
     cursor: pointer;
     font-size: 0.9rem;
+    font-weight: 600;
     transition: all 0.3s;
+    text-align: center;
+    width: 100%;
 }
 
 .btn-back:hover {
@@ -571,20 +592,22 @@ select.form-input option {
 /* Mode Toggle */
 .mode-toggle {
     display: flex;
-    gap: 8px;
-    align-items: center;
+    gap: 6px;
+    width: 100%;
 }
 
 .btn-mode {
+    flex: 1;
     background: rgba(139, 0, 255, 0.2);
     border: 1px solid var(--neon-purple);
     color: var(--neon-cyan);
-    padding: 8px 18px;
+    padding: 8px 0;
     border-radius: 10px;
     cursor: pointer;
-    font-size: 0.85rem;
+    font-size: 0.82rem;
     font-weight: 700;
     transition: all 0.3s;
+    text-align: center;
 }
 
 .btn-mode:hover {
@@ -598,15 +621,17 @@ select.form-input option {
 }
 
 .btn-clear-memory {
+    flex: 1;
     background: rgba(255, 68, 68, 0.15);
     border: 1px solid rgba(255, 68, 68, 0.5);
     color: #ff6666;
-    padding: 8px 14px;
+    padding: 8px 0;
     border-radius: 10px;
     cursor: pointer;
-    font-size: 0.8rem;
+    font-size: 0.78rem;
     font-weight: 600;
     transition: all 0.3s;
+    text-align: center;
 }
 
 .btn-clear-memory:hover {
@@ -615,23 +640,6 @@ select.form-input option {
 
 .btn-clear-memory.hidden {
     display: none;
-}
-
-/* Wheel Stage: wheel + history side by side */
-.wheel-stage {
-    display: flex;
-    align-items: flex-start;
-    justify-content: center;
-    gap: 20px;
-    width: 100%;
-}
-
-/* Wheel Frame */
-.wheel-frame {
-    position: relative;
-    width: 600px;
-    height: 600px;
-    flex-shrink: 0;
 }
 
 /* Full-window glow projection canvas */
@@ -654,20 +662,23 @@ select.form-input option {
         width: 90vw;
         height: 90vw;
     }
+    .wheel-sidebar {
+        width: 90vw;
+    }
 }
 
 /* ============================================
    History Panel
    ============================================ */
 .history-panel {
-    width: 220px;
-    max-height: 580px;
+    width: 100%;
+    max-height: 460px;
     background: var(--bg-panel);
     border: 1px solid rgba(255, 0, 255, 0.15);
     border-radius: 16px;
-    padding: 16px;
+    padding: 14px;
     overflow-y: auto;
-    flex-shrink: 0;
+    flex: 1;
 }
 
 .history-title {
@@ -727,7 +738,6 @@ select.form-input option {
 
 @media (max-width: 900px) {
     .history-panel {
-        width: 90vw;
         max-height: 200px;
     }
 }

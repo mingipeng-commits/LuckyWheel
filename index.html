@@ -83,17 +83,6 @@
 
         <!-- Wheel Container -->
         <div id="wheel-container" class="wheel-container hidden">
-            <!-- Top bar: back + mode toggle -->
-            <div class="wheel-top-bar">
-                <button id="btn-back" class="btn-back">&#8592; Edit List</button>
-                <div class="mode-toggle">
-                    <button id="btn-mode" class="btn-mode" title="Toggle selection mode">
-                        <span id="mode-label">Random</span>
-                    </button>
-                    <button id="btn-clear-memory" class="btn-clear-memory hidden" title="Clear selection memory">Reset</button>
-                </div>
-            </div>
-
             <div class="wheel-stage">
                 <!-- Wheel Frame -->
                 <div class="wheel-frame">
@@ -109,10 +98,19 @@
                     </button>
                 </div>
 
-                <!-- History Panel -->
-                <div id="history-panel" class="history-panel">
-                    <h3 class="history-title">History</h3>
-                    <div id="history-list" class="history-list"></div>
+                <!-- Right Sidebar: controls + history -->
+                <div class="wheel-sidebar">
+                    <button id="btn-back" class="btn-back">&#8592; Edit List</button>
+                    <div class="mode-toggle">
+                        <button id="btn-mode" class="btn-mode" title="Toggle selection mode">
+                            <span id="mode-label">Random</span>
+                        </button>
+                        <button id="btn-clear-memory" class="btn-clear-memory hidden" title="Clear selection memory">Reset</button>
+                    </div>
+                    <div id="history-panel" class="history-panel">
+                        <h3 class="history-title">History</h3>
+                        <div id="history-list" class="history-list"></div>
+                    </div>
                 </div>
             </div>
         </div>
