@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lucky Wheel Picker</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <!-- Winner Display Banner -->
+    <div id="winner-banner" class="winner-banner hidden">
+        <div id="winner-text" class="winner-text"></div>
+    </div>
+
+    <!-- Current Name Display (during spin) -->
+    <div id="current-name-display" class="current-name-display hidden">
+        <span id="current-name"></span>
+    </div>
+
+    <!-- Main Container -->
+    <div class="main-container">
+        <!-- Input Panel -->
+        <div id="input-panel" class="input-panel">
+            <h1 class="title">Lucky Wheel Picker</h1>
+            <p class="subtitle">Upload or enter student names to get started</p>
+
+            <!-- Tabs -->
+            <div class="tabs">
+                <button class="tab active" data-tab="upload">Upload File</button>
+                <button class="tab" data-tab="manual">Manual Input</button>
+            </div>
+
+            <!-- Upload Tab -->
+            <div id="tab-upload" class="tab-content active">
+                <div id="drop-zone" class="drop-zone">
+                    <div class="drop-zone-icon">&#128196;</div>
+                    <p>Drag & drop .csv or .xls/.xlsx file here</p>
+                    <p class="drop-zone-hint">or click to browse</p>
+                    <input type="file" id="file-input" accept=".csv,.xls,.xlsx" hidden>
+                </div>
+                <div id="file-info" class="file-info hidden">
+                    <span id="file-name"></span>
+                    <button id="clear-file" class="btn-small">Clear</button>
+                </div>
+                <div class="format-hint">
+                    <p>Expected columns: <strong>Name</strong>, <strong>StudentID (學號)</strong>, <strong>Gender</strong></p>
+                </div>
+            </div>
+
+            <!-- Manual Input Tab -->
+            <div id="tab-manual" class="tab-content">
+                <div class="manual-form">
+                    <div class="form-row">
+                        <input type="text" id="input-name" placeholder="Full Name" class="form-input">
+                        <input type="text" id="input-id" placeholder="學號" class="form-input form-input-small">
+                    </div>
+                    <div class="form-row">
+                        <select id="input-gender" class="form-input form-input-small">
+                            <option value="">Gender</option>
+                            <option value="M">Male</option>
+                            <option value="F">Female</option>
+                        </select>
+                        <button id="btn-add" class="btn-add">+ Add</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Student List -->
+            <div id="student-list-container" class="student-list-container hidden">
+                <h3>Students (<span id="student-count">0</span>)</h3>
+                <div id="student-list" class="student-list"></div>
+            </div>
+
+            <!-- Load Button -->
+            <button id="btn-load" class="btn-load hidden">
+                Load to Wheel
+            </button>
+        </div>
+
+        <!-- Wheel Container -->
+        <div id="wheel-container" class="wheel-container hidden">
+            <!-- Back button -->
+            <button id="btn-back" class="btn-back">&#8592; Edit List</button>
+
+            <!-- Wheel Frame -->
+            <div class="wheel-frame">
+                <!-- Rim light bulbs -->
+                <div id="rim-lights" class="rim-lights"></div>
+
+                <!-- Indicator Arrow -->
+                <div class="indicator-arrow"></div>
+
+                <!-- Canvas -->
+                <canvas id="wheel-canvas"></canvas>
+
+                <!-- Center Spin Button -->
+                <button id="btn-spin" class="btn-spin">
+                    <span class="spin-text">SPIN</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confetti Canvas (overlay) -->
+    <canvas id="confetti-canvas" class="confetti-canvas"></canvas>
+
+    <!-- Scripts -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+    <script src="js/sound.js"></script>
+    <script src="js/effects.js"></script>
+    <script src="js/wheel.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
