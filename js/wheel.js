@@ -4,9 +4,10 @@
 
 const LuckyWheel = (() => {
     let canvas, ctx;
+    let glowCanvas, glowCtx;
     let students = [];
     let colors = [];
-    let currentAngle = 0;       // radians, cumulative rotation
+    let currentAngle = 0;
     let angularVelocity = 0;
     let isSpinning = false;
     let animFrameId = null;
@@ -20,11 +21,16 @@ const LuckyWheel = (() => {
     let wheelRadius = 0;
     let centerX = 0;
     let centerY = 0;
-    const hubRadius = 55;  // inner hub circle
+    const hubRadius = 55;
 
     function init(canvasEl) {
         canvas = canvasEl;
         ctx = canvas.getContext('2d');
+
+        // Glow projection canvas (larger, behind the wheel)
+        glowCanvas = document.getElementById('glow-canvas');
+        glowCtx = glowCanvas.getContext('2d');
+
         resize();
         window.addEventListener('resize', resize);
     }
@@ -34,14 +40,20 @@ const LuckyWheel = (() => {
         const size = Math.min(frame.clientWidth, frame.clientHeight);
         const dpr = window.devicePixelRatio || 1;
 
-        // Leave space for rim lights
         const canvasSize = size - 40;
         canvas.width = canvasSize * dpr;
         canvas.height = canvasSize * dpr;
         canvas.style.width = canvasSize + 'px';
         canvas.style.height = canvasSize + 'px';
-
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+        // Glow canvas: bigger to accommodate projected light
+        const glowSize = size + 100;
+        glowCanvas.width = glowSize * dpr;
+        glowCanvas.height = glowSize * dpr;
+        glowCanvas.style.width = glowSize + 'px';
+        glowCanvas.style.height = glowSize + 'px';
+        glowCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
         wheelRadius = canvasSize / 2 - 10;
         centerX = canvasSize / 2;
@@ -54,13 +66,12 @@ const LuckyWheel = (() => {
 
     function generateColors(n) {
         colors = [];
-        // Use golden angle for better color distribution
         const goldenAngle = 137.508;
         for (let i = 0; i < n; i++) {
             const hue = (i * goldenAngle) % 360;
             const sat = 70 + (i % 3) * 5;
             const light = 48 + (i % 4) * 4;
-            colors.push(`hsl(${hue}, ${sat}%, ${light}%)`);
+            colors.push({ h: hue, s: sat, l: light, css: `hsl(${hue}, ${sat}%, ${light}%)` });
         }
         return colors;
     }
@@ -76,12 +87,12 @@ const LuckyWheel = (() => {
     function draw() {
         if (!ctx || students.length === 0) return;
 
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.clearRect(0, 0, canvas.width / (window.devicePixelRatio || 1) + 100, canvas.height / (window.devicePixelRatio || 1) + 100);
 
         const n = students.length;
         const sliceAngle = (Math.PI * 2) / n;
 
-        // Draw outer ring (purple border)
+        // Draw outer ring
         ctx.beginPath();
         ctx.arc(centerX, centerY, wheelRadius + 5, 0, Math.PI * 2);
         ctx.fillStyle = '#2d1b69';
@@ -95,34 +106,32 @@ const LuckyWheel = (() => {
             const startAngle = currentAngle + i * sliceAngle - Math.PI / 2;
             const endAngle = startAngle + sliceAngle;
 
-            // Segment fill
             ctx.beginPath();
             ctx.moveTo(centerX, centerY);
             ctx.arc(centerX, centerY, wheelRadius, startAngle, endAngle);
             ctx.closePath();
-            ctx.fillStyle = colors[i];
+            ctx.fillStyle = colors[i].css;
 
-            // Neon glow effect during spin
             if (neonGlowIntensity > 0) {
-                ctx.shadowBlur = 15 * neonGlowIntensity;
-                ctx.shadowColor = colors[i];
+                ctx.shadowBlur = 12 * neonGlowIntensity;
+                ctx.shadowColor = colors[i].css;
             } else {
                 ctx.shadowBlur = 0;
             }
             ctx.fill();
             ctx.shadowBlur = 0;
 
-            // Segment border
             ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
             ctx.lineWidth = 1;
             ctx.stroke();
 
-            // Draw text
             drawSegmentText(i, startAngle, sliceAngle);
         }
 
-        // Draw center hub
         drawHub();
+
+        // Draw color projection glow
+        drawGlowProjection();
     }
 
     function drawSegmentText(index, startAngle, sliceAngle) {
@@ -130,8 +139,7 @@ const LuckyWheel = (() => {
         const midAngle = startAngle + sliceAngle / 2;
         const n = students.length;
 
-        // Text positioning
-        const textRadius = wheelRadius * 0.65;
+        const textRadius = wheelRadius * 0.62;
         const tx = centerX + Math.cos(midAngle) * textRadius;
         const ty = centerY + Math.sin(midAngle) * textRadius;
 
@@ -139,28 +147,29 @@ const LuckyWheel = (() => {
         ctx.translate(tx, ty);
         ctx.rotate(midAngle + Math.PI / 2);
 
-        // Determine font size based on number of students
-        let fontSize = 14;
-        if (n > 20) fontSize = 11;
-        if (n > 35) fontSize = 9;
-        if (n > 50) fontSize = 7;
+        // Bigger font sizes
+        let fontSize = 18;
+        if (n > 12) fontSize = 16;
+        if (n > 20) fontSize = 14;
+        if (n > 30) fontSize = 12;
+        if (n > 45) fontSize = 10;
+        if (n > 60) fontSize = 8;
 
         ctx.font = `bold ${fontSize}px 'Segoe UI', sans-serif`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
 
-        // Text shadow for readability
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+        // Shadow for readability
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
         ctx.fillText(student.name, 1, 1);
 
-        // Main text
         ctx.fillStyle = '#ffffff';
         ctx.fillText(student.name, 0, 0);
 
-        // Student ID below name (if space allows)
-        if (n <= 30 && student.studentId) {
-            ctx.font = `${fontSize - 2}px 'Segoe UI', sans-serif`;
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+        // Student ID below
+        if (n <= 25 && student.studentId) {
+            ctx.font = `${Math.max(fontSize - 3, 7)}px 'Segoe UI', sans-serif`;
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.75)';
             ctx.fillText(student.studentId, 0, fontSize + 2);
         }
 
@@ -168,7 +177,6 @@ const LuckyWheel = (() => {
     }
 
     function drawHub() {
-        // Outer hub ring
         ctx.beginPath();
         ctx.arc(centerX, centerY, hubRadius + 5, 0, Math.PI * 2);
         ctx.fillStyle = '#2d1b69';
@@ -177,7 +185,6 @@ const LuckyWheel = (() => {
         ctx.lineWidth = 2;
         ctx.stroke();
 
-        // Inner hub gradient
         const grad = ctx.createRadialGradient(
             centerX - 10, centerY - 10, 5,
             centerX, centerY, hubRadius
@@ -192,16 +199,67 @@ const LuckyWheel = (() => {
         ctx.fill();
     }
 
+    // ---- Color Light Projection ----
+    function drawGlowProjection() {
+        if (!glowCtx || students.length === 0) return;
+
+        const glowSize = parseInt(glowCanvas.style.width);
+        const gcx = glowSize / 2;
+        const gcy = glowSize / 2;
+
+        glowCtx.clearRect(0, 0, glowSize, glowSize);
+
+        if (neonGlowIntensity <= 0.01) return;
+
+        const n = students.length;
+        const sliceAngle = (Math.PI * 2) / n;
+        const projectionDistance = wheelRadius + 60 + 40 * neonGlowIntensity;
+        const innerRadius = wheelRadius + 5;
+
+        for (let i = 0; i < n; i++) {
+            const startAngle = currentAngle + i * sliceAngle - Math.PI / 2;
+            const endAngle = startAngle + sliceAngle;
+            const midAngle = startAngle + sliceAngle / 2;
+
+            // Create radial gradient from edge of wheel outward
+            const gx = gcx + Math.cos(midAngle) * (innerRadius + 20);
+            const gy = gcy + Math.sin(midAngle) * (innerRadius + 20);
+
+            const { h, s } = colors[i];
+            const alpha = 0.5 * neonGlowIntensity;
+
+            glowCtx.beginPath();
+            glowCtx.moveTo(gcx, gcy);
+            glowCtx.arc(gcx, gcy, projectionDistance, startAngle, endAngle);
+            glowCtx.closePath();
+
+            // Only draw the outer ring (clip out inner)
+            glowCtx.save();
+
+            // Outer wedge
+            glowCtx.beginPath();
+            glowCtx.arc(gcx, gcy, projectionDistance, startAngle, endAngle);
+            glowCtx.arc(gcx, gcy, innerRadius, endAngle, startAngle, true);
+            glowCtx.closePath();
+
+            const grad = glowCtx.createRadialGradient(gcx, gcy, innerRadius, gcx, gcy, projectionDistance);
+            grad.addColorStop(0, `hsla(${h}, ${s}%, 60%, ${alpha})`);
+            grad.addColorStop(0.5, `hsla(${h}, ${s}%, 55%, ${alpha * 0.5})`);
+            grad.addColorStop(1, `hsla(${h}, ${s}%, 50%, 0)`);
+
+            glowCtx.fillStyle = grad;
+            glowCtx.fill();
+
+            glowCtx.restore();
+        }
+    }
+
     // ---- Segment Detection ----
     function getCurrentSegmentIndex() {
         const n = students.length;
         if (n === 0) return -1;
 
         const sliceAngle = (Math.PI * 2) / n;
-        // Indicator is at the top (12 o'clock = -PI/2 in canvas coords)
-        // We need to find which segment is at that position
-        // currentAngle is the rotation offset; segments are drawn starting from currentAngle - PI/2
-        // The indicator position in "wheel space" is: -currentAngle (normalized)
         let normalized = (-currentAngle % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2);
         const index = Math.floor(normalized / sliceAngle) % n;
         return index;
@@ -215,43 +273,32 @@ const LuckyWheel = (() => {
         onWinnerCallback = callback;
         onSegmentChangeCallback = segmentChangeCallback;
 
-        // Randomized initial velocity and friction
-        angularVelocity = 15 + Math.random() * 12;  // rad/s
-        const friction = 0.985 + Math.random() * 0.007; // per frame decay
+        angularVelocity = 15 + Math.random() * 12;
+        const friction = 0.985 + Math.random() * 0.007;
 
-        // Start effects
         neonGlowIntensity = 1;
         Effects.setSpinning(true);
 
-        // Start whoosh sound
         whooshSound = SoundEngine.playWhoosh();
-
-        // Play button click
         SoundEngine.playClick();
 
         let lastTime = performance.now();
         previousSegmentIndex = getCurrentSegmentIndex();
 
         function animate(now) {
-            const dt = Math.min((now - lastTime) / 1000, 0.05); // cap dt
+            const dt = Math.min((now - lastTime) / 1000, 0.05);
             lastTime = now;
 
-            // Apply friction
             angularVelocity *= friction;
-
-            // Update angle
             currentAngle += angularVelocity * dt;
 
-            // Neon glow fades as wheel slows
             const maxSpeed = 27;
-            neonGlowIntensity = Math.min(1, angularVelocity / (maxSpeed * 0.5));
+            neonGlowIntensity = Math.min(1, angularVelocity / (maxSpeed * 0.4));
 
-            // Update whoosh sound
             if (whooshSound && whooshSound.update) {
                 whooshSound.update(Math.min(1, angularVelocity / maxSpeed));
             }
 
-            // Tick detection
             const currentIdx = getCurrentSegmentIndex();
             if (currentIdx !== previousSegmentIndex && currentIdx >= 0) {
                 SoundEngine.playTick();
@@ -261,17 +308,13 @@ const LuckyWheel = (() => {
                 previousSegmentIndex = currentIdx;
             }
 
-            // Redraw
             draw();
 
-            // Check stop condition
             if (angularVelocity < 0.05) {
-                // Final slowdown with more precision
                 angularVelocity *= 0.95;
             }
 
             if (angularVelocity < 0.002) {
-                // Stopped
                 isSpinning = false;
                 angularVelocity = 0;
                 neonGlowIntensity = 0;

@@ -5,6 +5,10 @@
 (() => {
     // ---- State ----
     let students = [];
+    let history = [];           // last N spin results
+    const MAX_HISTORY = 30;
+    let selectionMode = 'random'; // 'random' | 'no-repeat'
+    let selectedSet = new Set();  // names already selected in no-repeat mode
 
     // ---- DOM Elements ----
     const inputPanel = document.getElementById('input-panel');
@@ -31,6 +35,10 @@
     const currentNameEl = document.getElementById('current-name');
     const winnerBanner = document.getElementById('winner-banner');
     const winnerText = document.getElementById('winner-text');
+    const historyList = document.getElementById('history-list');
+    const btnMode = document.getElementById('btn-mode');
+    const modeLabel = document.getElementById('mode-label');
+    const btnClearMemory = document.getElementById('btn-clear-memory');
 
     // ---- Tab Switching ----
     tabBtns.forEach(btn => {
@@ -97,7 +105,6 @@
                 return;
             }
 
-            // Parse header
             const header = lines[0].split(',').map(h => h.trim().toLowerCase());
             const nameIdx = findColumnIndex(header, ['name', 'fullname', 'full name', '姓名']);
             const idIdx = findColumnIndex(header, ['studentid', 'student id', 'id', '學號', '学号']);
@@ -173,7 +180,6 @@
                     return;
                 }
 
-                // Try to identify columns
                 const sampleKeys = Object.keys(json[0]);
                 const nameKey = findKey(sampleKeys, ['name', 'fullname', 'full name', '姓名']);
                 const idKey = findKey(sampleKeys, ['studentid', 'student id', 'id', '學號', '学号']);
@@ -272,7 +278,6 @@
             studentList.appendChild(item);
         });
 
-        // Attach delete handlers
         studentList.querySelectorAll('.btn-delete').forEach(btn => {
             btn.addEventListener('click', () => {
                 const idx = parseInt(btn.dataset.index);
@@ -288,6 +293,64 @@
         return div.innerHTML;
     }
 
+    // ---- Mode Toggle ----
+    btnMode.addEventListener('click', () => {
+        if (selectionMode === 'random') {
+            selectionMode = 'no-repeat';
+            modeLabel.textContent = 'No Repeat';
+            btnMode.classList.add('no-repeat');
+            btnClearMemory.classList.remove('hidden');
+        } else {
+            selectionMode = 'random';
+            modeLabel.textContent = 'Random';
+            btnMode.classList.remove('no-repeat');
+            btnClearMemory.classList.add('hidden');
+        }
+    });
+
+    btnClearMemory.addEventListener('click', () => {
+        selectedSet.clear();
+        btnClearMemory.textContent = 'Reset';
+    });
+
+    function getAvailableForSpin() {
+        if (selectionMode === 'random') return students;
+
+        const available = students.filter(s => !selectedSet.has(studentKey(s)));
+        if (available.length === 0) {
+            // All selected — auto reset
+            selectedSet.clear();
+            return students;
+        }
+        return available;
+    }
+
+    function studentKey(s) {
+        return s.name + '|' + (s.studentId || '');
+    }
+
+    // ---- History ----
+    function addToHistory(winner) {
+        history.unshift(winner);
+        if (history.length > MAX_HISTORY) history.pop();
+        renderHistory();
+    }
+
+    function renderHistory() {
+        historyList.innerHTML = '';
+        history.forEach((w, i) => {
+            const item = document.createElement('div');
+            item.className = 'history-item';
+            const idStr = w.studentId ? `<span class="history-item-id">${escapeHtml(w.studentId)}</span>` : '';
+            item.innerHTML = `
+                <span class="history-item-number">#${i + 1}</span>
+                <span class="history-item-name">${escapeHtml(w.name)}</span>
+                ${idStr}
+            `;
+            historyList.appendChild(item);
+        });
+    }
+
     // ---- Load to Wheel ----
     btnLoad.addEventListener('click', () => {
         if (students.length < 2) {
@@ -295,24 +358,19 @@
             return;
         }
 
-        // Initialize audio on user gesture
         SoundEngine.init();
 
-        // Switch view
         inputPanel.classList.add('hidden');
         wheelContainer.classList.remove('hidden');
 
-        // Initialize wheel
         const canvas = document.getElementById('wheel-canvas');
         LuckyWheel.init(canvas);
         LuckyWheel.setStudents([...students]);
 
-        // Initialize effects
         Effects.createRimLights();
         Effects.startRimAnimation();
         Effects.initConfetti();
 
-        // Hide any previous winner
         Effects.hideWinnerBurst();
         currentNameDisplay.classList.add('hidden');
     });
@@ -331,30 +389,51 @@
     btnSpin.addEventListener('click', () => {
         if (LuckyWheel.isCurrentlySpinning()) return;
 
-        // Hide previous winner
+        // No-repeat mode check
+        if (selectionMode === 'no-repeat') {
+            const available = getAvailableForSpin();
+            if (available.length === 0) return;
+
+            // Show remaining count
+            const remaining = students.filter(s => !selectedSet.has(studentKey(s))).length;
+            btnClearMemory.textContent = `Reset (${remaining}/${students.length})`;
+        }
+
         Effects.hideWinnerBurst();
 
-        // Show current name display
         currentNameDisplay.classList.remove('hidden');
-        currentNameEl.textContent = '...';
+        currentNameEl.textContent = '\u00A0';
 
-        // Start button light show
         btnSpin.classList.add('spinning');
         Effects.startButtonLightShow(btnSpin);
 
-        // Spin!
         LuckyWheel.spin(
             // Winner callback
             (winner) => {
                 btnSpin.classList.remove('spinning');
                 Effects.stopButtonLightShow(btnSpin);
 
-                // Show winner
+                // No-repeat: if already selected, re-spin (edge case with animation)
+                // But since the wheel is random, just record and mark
+                if (selectionMode === 'no-repeat') {
+                    if (selectedSet.has(studentKey(winner))) {
+                        // Very rare edge case — just accept it this time
+                    }
+                    selectedSet.add(studentKey(winner));
+                    const remaining = students.filter(s => !selectedSet.has(studentKey(s))).length;
+                    btnClearMemory.textContent = `Reset (${remaining}/${students.length})`;
+
+                    if (remaining === 0) {
+                        btnClearMemory.textContent = `Reset (All done!)`;
+                    }
+                }
+
+                addToHistory(winner);
+
                 const genderStr = winner.gender === 'M' ? ' (Male)' : winner.gender === 'F' ? ' (Female)' : '';
                 const idStr = winner.studentId ? ` - ${winner.studentId}` : '';
-                winnerText.textContent = `🎉 ${winner.name}${idStr}${genderStr} 🎉`;
+                winnerText.textContent = `${winner.name}${idStr}${genderStr}`;
 
-                // Delay for dramatic effect
                 setTimeout(() => {
                     currentNameDisplay.classList.add('hidden');
                     Effects.showWinnerBurst();

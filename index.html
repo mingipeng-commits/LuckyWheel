@@ -79,24 +79,43 @@
 
         <!-- Wheel Container -->
         <div id="wheel-container" class="wheel-container hidden">
-            <!-- Back button -->
-            <button id="btn-back" class="btn-back">&#8592; Edit List</button>
+            <!-- Top bar: back + mode toggle -->
+            <div class="wheel-top-bar">
+                <button id="btn-back" class="btn-back">&#8592; Edit List</button>
+                <div class="mode-toggle">
+                    <button id="btn-mode" class="btn-mode" title="Toggle selection mode">
+                        <span id="mode-label">Random</span>
+                    </button>
+                    <button id="btn-clear-memory" class="btn-clear-memory hidden" title="Clear selection memory">Reset</button>
+                </div>
+            </div>
 
-            <!-- Wheel Frame -->
-            <div class="wheel-frame">
-                <!-- Rim light bulbs -->
-                <div id="rim-lights" class="rim-lights"></div>
+            <div class="wheel-stage">
+                <!-- Wheel Frame -->
+                <div class="wheel-frame">
+                    <!-- Color projection canvas (behind wheel) -->
+                    <canvas id="glow-canvas" class="glow-canvas"></canvas>
 
-                <!-- Indicator Arrow -->
-                <div class="indicator-arrow"></div>
+                    <!-- Rim light bulbs -->
+                    <div id="rim-lights" class="rim-lights"></div>
 
-                <!-- Canvas -->
-                <canvas id="wheel-canvas"></canvas>
+                    <!-- Indicator Arrow -->
+                    <div class="indicator-arrow"></div>
 
-                <!-- Center Spin Button -->
-                <button id="btn-spin" class="btn-spin">
-                    <span class="spin-text">SPIN</span>
-                </button>
+                    <!-- Canvas -->
+                    <canvas id="wheel-canvas"></canvas>
+
+                    <!-- Center Spin Button -->
+                    <button id="btn-spin" class="btn-spin">
+                        <span class="spin-text">SPIN</span>
+                    </button>
+                </div>
+
+                <!-- History Panel -->
+                <div id="history-panel" class="history-panel">
+                    <h3 class="history-title">History</h3>
+                    <div id="history-list" class="history-list"></div>
+                </div>
             </div>
         </div>
     </div>
