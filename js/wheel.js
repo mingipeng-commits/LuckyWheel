@@ -16,6 +16,7 @@ const LuckyWheel = (() => {
     let neonGlowIntensity = 0;
     let onWinnerCallback = null;
     let onSegmentChangeCallback = null;
+    let breathingAnimId = null;
 
     // Wheel dimensions
     let wheelRadius = 0;
@@ -78,6 +79,30 @@ const LuckyWheel = (() => {
         currentAngle = 0;
         previousSegmentIndex = -1;
         draw();
+        startBreathing();
+    }
+
+    function startBreathing() {
+        stopBreathing();
+        if (students.length === 0) return;
+
+        function breathe(timestamp) {
+            if (isSpinning) {
+                breathingAnimId = null;
+                return;
+            }
+            neonGlowIntensity = 0.15 + 0.1 * Math.sin(timestamp / 1200);
+            draw();
+            breathingAnimId = requestAnimationFrame(breathe);
+        }
+        breathingAnimId = requestAnimationFrame(breathe);
+    }
+
+    function stopBreathing() {
+        if (breathingAnimId) {
+            cancelAnimationFrame(breathingAnimId);
+            breathingAnimId = null;
+        }
     }
 
     function draw() {
@@ -261,6 +286,7 @@ const LuckyWheel = (() => {
         if (isSpinning || students.length === 0) return;
 
         isSpinning = true;
+        stopBreathing();
         onWinnerCallback = callback;
         onSegmentChangeCallback = segmentChangeCallback;
 
@@ -347,6 +373,7 @@ const LuckyWheel = (() => {
                 whooshSound = null;
 
                 draw();
+                startBreathing();
 
                 const winnerIdx = getCurrentSegmentIndex();
                 if (onWinnerCallback && winnerIdx >= 0 && winnerIdx < students.length) {

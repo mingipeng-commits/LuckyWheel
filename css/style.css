@@ -264,6 +264,8 @@ body {
 .form-row {
     display: flex;
     gap: 10px;
+    width: 100%;
+    align-items: center;
 }
 
 .form-input {
@@ -395,10 +397,16 @@ select.form-input option {
     display: flex;
     gap: 12px;
     align-items: center;
+    min-width: 0;
+    overflow: hidden;
+    flex: 1;
 }
 
 .student-item-name {
     font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .student-item-id {
