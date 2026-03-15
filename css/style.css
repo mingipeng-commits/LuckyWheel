@@ -327,10 +327,33 @@ select.form-input option {
     display: none;
 }
 
-.student-list-container h3 {
+.student-list-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     margin-bottom: 12px;
+}
+
+.student-list-container h3 {
     font-size: 1rem;
     color: var(--text-secondary);
+}
+
+.btn-clear-all {
+    padding: 4px 14px;
+    background: rgba(255, 68, 68, 0.12);
+    border: 1px solid rgba(255, 68, 68, 0.4);
+    color: #ff6666;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-weight: 600;
+    transition: all 0.2s;
+}
+
+.btn-clear-all:hover {
+    background: rgba(255, 68, 68, 0.25);
+    border-color: #ff6666;
 }
 
 .student-list {

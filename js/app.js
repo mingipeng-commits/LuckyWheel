@@ -4,11 +4,35 @@
 
 (() => {
     // ---- State ----
+    const STORAGE_KEY = 'luckywheel_students';
     let students = [];
     let history = [];           // last N spin results
     const MAX_HISTORY = 30;
     let selectionMode = 'random'; // 'random' | 'no-repeat'
     let selectedSet = new Set();  // names already selected in no-repeat mode
+
+    // ---- LocalStorage helpers ----
+    function saveStudents() {
+        try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(students));
+        } catch (e) { /* quota exceeded or private mode — ignore */ }
+    }
+
+    function loadStudents() {
+        try {
+            const raw = localStorage.getItem(STORAGE_KEY);
+            if (raw) {
+                const parsed = JSON.parse(raw);
+                if (Array.isArray(parsed) && parsed.length > 0) {
+                    students = parsed;
+                }
+            }
+        } catch (e) { /* corrupted data — ignore */ }
+    }
+
+    function clearSavedStudents() {
+        try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
+    }
 
     // ---- DOM Elements ----
     const inputPanel = document.getElementById('input-panel');
@@ -39,6 +63,7 @@
     const btnMode = document.getElementById('btn-mode');
     const modeLabel = document.getElementById('mode-label');
     const btnClearMemory = document.getElementById('btn-clear-memory');
+    const btnClearAll = document.getElementById('btn-clear-all');
 
     // ---- Tab Switching ----
     tabBtns.forEach(btn => {
@@ -247,9 +272,19 @@
         updateStudentList();
     }
 
+    // ---- Clear All ----
+    btnClearAll.addEventListener('click', () => {
+        if (students.length === 0) return;
+        if (!confirm('Are you sure you want to clear all students?')) return;
+        students = [];
+        clearSavedStudents();
+        updateStudentList();
+    });
+
     // ---- Student List ----
     function updateStudentList() {
         studentCount.textContent = students.length;
+        saveStudents();
 
         if (students.length > 0) {
             studentListContainer.classList.remove('hidden');
@@ -447,4 +482,10 @@
             }
         );
     });
+
+    // ---- Startup: restore saved students ----
+    loadStudents();
+    if (students.length > 0) {
+        updateStudentList();
+    }
 })();
