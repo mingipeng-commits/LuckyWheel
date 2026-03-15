@@ -219,7 +219,7 @@ const SoundEngine = (() => {
         }
     }
 
-    // ---- BGM A: Ambient idle music (plays on wheel screen, before/after spin) ----
+    // ---- BGM A: Cheerful standby music (plays on wheel screen, before/after spin) ----
     let bgmANodes = null;
 
     function startBgmA() {
@@ -230,81 +230,185 @@ const SoundEngine = (() => {
         const master = ctx.createGain();
         master.gain.value = 0;
         master.connect(ctx.destination);
-        master.gain.setTargetAtTime(0.45, ctx.currentTime, 0.8);
+        master.gain.setTargetAtTime(0.18, ctx.currentTime, 0.3);
 
         const now = ctx.currentTime;
         const allSrcs = [];
+        const bpm = 120;
+        const beatSec = 60 / bpm;
 
-        // Warm pad: two detuned sine oscillators with slow LFO volume
-        const padGain = ctx.createGain();
-        padGain.gain.value = 0.4;
-        padGain.connect(master);
+        // --- Bouncy bass line (triangle wave, warm & punchy) ---
+        const bassGain = ctx.createGain();
+        bassGain.gain.value = 0.28;
+        bassGain.connect(master);
 
-        const padChords = [
-            [261.63, 329.63, 392.00],  // C4 E4 G4
-            [293.66, 369.99, 440.00],  // D4 F#4 A4
-            [246.94, 311.13, 369.99],  // B3 Eb4 F#4
-            [261.63, 311.13, 392.00],  // C4 Eb4 G4
+        const bassPattern = [
+            261.63, 0, 261.63, 329.63,  // C4 . C4 E4
+            349.23, 0, 329.63, 293.66,  // F4 . E4 D4
+            392.00, 0, 349.23, 329.63,  // G4 . F4 E4
+            293.66, 0, 329.63, 261.63,  // D4 . E4 C4
         ];
-        const chordDur = 4.0; // seconds per chord
-        const totalPadDur = padChords.length * chordDur;
-        const padLoops = Math.ceil(120 / totalPadDur); // ~2 min
+        const bassNoteDur = beatSec / 2; // 8th notes
+        const bassLoopDur = bassPattern.length * bassNoteDur;
+        const bassLoops = Math.ceil(120 / bassLoopDur);
 
-        for (let loop = 0; loop < padLoops; loop++) {
-            padChords.forEach((chord, ci) => {
-                chord.forEach(freq => {
-                    const osc = ctx.createOscillator();
-                    const env = ctx.createGain();
-                    osc.type = 'sine';
-                    osc.frequency.value = freq;
-
-                    const t = now + loop * totalPadDur + ci * chordDur;
-                    env.gain.setValueAtTime(0, t);
-                    env.gain.linearRampToValueAtTime(0.35, t + 0.8);
-                    env.gain.setValueAtTime(0.35, t + chordDur - 0.8);
-                    env.gain.linearRampToValueAtTime(0, t + chordDur);
-
-                    const lpf = ctx.createBiquadFilter();
-                    lpf.type = 'lowpass';
-                    lpf.frequency.value = 800;
-
-                    osc.connect(lpf);
-                    lpf.connect(env);
-                    env.connect(padGain);
-                    osc.start(t);
-                    osc.stop(t + chordDur + 0.1);
-                    allSrcs.push(osc);
-                });
-            });
-        }
-
-        // Gentle arpeggiated bell tones
-        const bellGain = ctx.createGain();
-        bellGain.gain.value = 0.25;
-        bellGain.connect(master);
-
-        const bellNotes = [523.25, 659.25, 783.99, 659.25, 523.25, 392.00, 440.00, 523.25];
-        const bellInterval = 1.5;
-        const bellLoopDur = bellNotes.length * bellInterval;
-        const bellLoops = Math.ceil(120 / bellLoopDur);
-
-        for (let loop = 0; loop < bellLoops; loop++) {
-            bellNotes.forEach((freq, i) => {
+        for (let loop = 0; loop < bassLoops; loop++) {
+            for (let i = 0; i < bassPattern.length; i++) {
+                if (bassPattern[i] === 0) continue; // rest
                 const osc = ctx.createOscillator();
                 const env = ctx.createGain();
-                osc.type = 'sine';
-                osc.frequency.value = freq;
+                osc.type = 'triangle';
+                osc.frequency.value = bassPattern[i] / 2; // one octave lower
 
-                const t = now + loop * bellLoopDur + i * bellInterval;
+                const t = now + loop * bassLoopDur + i * bassNoteDur;
                 env.gain.setValueAtTime(0, t);
-                env.gain.linearRampToValueAtTime(0.25, t + 0.02);
-                env.gain.exponentialRampToValueAtTime(0.001, t + 1.2);
+                env.gain.linearRampToValueAtTime(0.3, t + 0.01);
+                env.gain.setValueAtTime(0.25, t + bassNoteDur * 0.6);
+                env.gain.exponentialRampToValueAtTime(0.001, t + bassNoteDur * 0.95);
 
-                osc.connect(env);
-                env.connect(bellGain);
+                const lpf = ctx.createBiquadFilter();
+                lpf.type = 'lowpass';
+                lpf.frequency.value = 600;
+
+                osc.connect(lpf);
+                lpf.connect(env);
+                env.connect(bassGain);
                 osc.start(t);
-                osc.stop(t + 1.3);
+                osc.stop(t + bassNoteDur);
                 allSrcs.push(osc);
+            }
+        }
+
+        // --- Cheerful melody (square wave, bright & fun) ---
+        const melodyGain = ctx.createGain();
+        melodyGain.gain.value = 0.14;
+        melodyGain.connect(master);
+
+        const melodyPattern = [
+            { freq: 523.25, dur: 1 },   // C5
+            { freq: 587.33, dur: 0.5 }, // D5
+            { freq: 659.25, dur: 0.5 }, // E5
+            { freq: 783.99, dur: 1 },   // G5
+            { freq: 659.25, dur: 0.5 }, // E5
+            { freq: 783.99, dur: 0.5 }, // G5
+            { freq: 880.00, dur: 1.5 }, // A5
+            { freq: 783.99, dur: 0.5 }, // G5
+            // phrase 2
+            { freq: 880.00, dur: 0.5 }, // A5
+            { freq: 783.99, dur: 0.5 }, // G5
+            { freq: 659.25, dur: 1 },   // E5
+            { freq: 523.25, dur: 0.5 }, // C5
+            { freq: 587.33, dur: 0.5 }, // D5
+            { freq: 659.25, dur: 1 },   // E5
+            { freq: 587.33, dur: 0.5 }, // D5
+            { freq: 523.25, dur: 1.5 }, // C5
+        ];
+
+        const melodyOscs = [];
+        const melodyLoopDur = melodyPattern.reduce((sum, n) => sum + n.dur * beatSec, 0);
+        const melodyLoops = Math.ceil(120 / melodyLoopDur);
+
+        for (let loop = 0; loop < melodyLoops; loop++) {
+            let offset = 0;
+            for (const note of melodyPattern) {
+                const osc = ctx.createOscillator();
+                const env = ctx.createGain();
+                osc.type = 'square';
+                osc.frequency.value = note.freq;
+
+                const dur = note.dur * beatSec;
+                const t = now + loop * melodyLoopDur + offset;
+
+                env.gain.setValueAtTime(0, t);
+                env.gain.linearRampToValueAtTime(0.2, t + 0.02);
+                env.gain.setValueAtTime(0.16, t + dur * 0.6);
+                env.gain.exponentialRampToValueAtTime(0.001, t + dur * 0.92);
+
+                const lpf = ctx.createBiquadFilter();
+                lpf.type = 'lowpass';
+                lpf.frequency.value = 2800;
+
+                osc.connect(lpf);
+                lpf.connect(env);
+                env.connect(melodyGain);
+                osc.start(t);
+                osc.stop(t + dur);
+                melodyOscs.push(osc);
+
+                offset += dur;
+            }
+        }
+        allSrcs.push(...melodyOscs);
+
+        // --- Light percussion (shaker on 8th notes) ---
+        const percGain = ctx.createGain();
+        percGain.gain.value = 0.07;
+        percGain.connect(master);
+
+        const percCount = Math.ceil(120 / (beatSec / 2));
+        for (let i = 0; i < percCount; i++) {
+            const bufSize = Math.floor(ctx.sampleRate * 0.03);
+            const buffer = ctx.createBuffer(1, bufSize, ctx.sampleRate);
+            const data = buffer.getChannelData(0);
+            for (let j = 0; j < bufSize; j++) {
+                data[j] = (Math.random() * 2 - 1);
+            }
+
+            const src = ctx.createBufferSource();
+            src.buffer = buffer;
+            const env = ctx.createGain();
+            const t = now + i * beatSec / 2;
+            const accent = (i % 4 === 0) ? 1.0 : (i % 4 === 2) ? 0.7 : 0.4;
+            env.gain.setValueAtTime(accent, t);
+            env.gain.exponentialRampToValueAtTime(0.001, t + 0.03);
+
+            const hpf = ctx.createBiquadFilter();
+            hpf.type = 'highpass';
+            hpf.frequency.value = 7000;
+
+            src.connect(hpf);
+            hpf.connect(env);
+            env.connect(percGain);
+            src.start(t);
+            allSrcs.push(src);
+        }
+
+        // --- Staccato chord stabs (on beats 1 and 3) ---
+        const chordGain = ctx.createGain();
+        chordGain.gain.value = 0.08;
+        chordGain.connect(master);
+
+        const chordProg = [
+            [523.25, 659.25, 783.99],  // C E G
+            [349.23, 440.00, 523.25],  // F A C
+            [392.00, 493.88, 587.33],  // G B D
+            [349.23, 440.00, 523.25],  // F A C
+        ];
+        const barDur = beatSec * 4;
+        const chordLoopDur = chordProg.length * barDur;
+        const chordLoops = Math.ceil(120 / chordLoopDur);
+
+        for (let loop = 0; loop < chordLoops; loop++) {
+            chordProg.forEach((chord, ci) => {
+                [0, 2].forEach(beat => { // beats 1 and 3
+                    chord.forEach(freq => {
+                        const osc = ctx.createOscillator();
+                        const env = ctx.createGain();
+                        osc.type = 'sine';
+                        osc.frequency.value = freq;
+
+                        const t = now + loop * chordLoopDur + ci * barDur + beat * beatSec;
+                        env.gain.setValueAtTime(0, t);
+                        env.gain.linearRampToValueAtTime(0.2, t + 0.01);
+                        env.gain.exponentialRampToValueAtTime(0.001, t + beatSec * 0.8);
+
+                        osc.connect(env);
+                        env.connect(chordGain);
+                        osc.start(t);
+                        osc.stop(t + beatSec);
+                        allSrcs.push(osc);
+                    });
+                });
             });
         }
 
