@@ -402,8 +402,6 @@
         LuckyWheel.init(canvas);
         LuckyWheel.setStudents([...students]);
 
-        Effects.createRimLights();
-        Effects.startRimAnimation();
         Effects.initConfetti();
 
         Effects.hideWinnerBurst();
@@ -415,7 +413,6 @@
         if (LuckyWheel.isCurrentlySpinning()) return;
         wheelContainer.classList.add('hidden');
         inputPanel.classList.remove('hidden');
-        Effects.stopRimAnimation();
         Effects.hideWinnerBurst();
         currentNameDisplay.classList.add('hidden');
     });
@@ -424,13 +421,25 @@
     btnSpin.addEventListener('click', () => {
         if (LuckyWheel.isCurrentlySpinning()) return;
 
-        // No-repeat mode check
-        if (selectionMode === 'no-repeat') {
-            const available = getAvailableForSpin();
-            if (available.length === 0) return;
+        // Determine target index for no-repeat mode
+        let targetIndex = -1; // -1 = pure random
 
-            // Show remaining count
-            const remaining = students.filter(s => !selectedSet.has(studentKey(s))).length;
+        if (selectionMode === 'no-repeat') {
+            // Find available (not-yet-selected) students
+            let available = students.filter(s => !selectedSet.has(studentKey(s)));
+            if (available.length === 0) {
+                // All selected — auto reset
+                selectedSet.clear();
+                available = [...students];
+            }
+
+            // Pick a random one from the available pool
+            const chosen = available[Math.floor(Math.random() * available.length)];
+
+            // Find its index in the wheel's student array (which matches students array order)
+            targetIndex = students.findIndex(s => studentKey(s) === studentKey(chosen));
+
+            const remaining = available.length;
             btnClearMemory.textContent = `Reset (${remaining}/${students.length})`;
         }
 
@@ -448,18 +457,14 @@
                 btnSpin.classList.remove('spinning');
                 Effects.stopButtonLightShow(btnSpin);
 
-                // No-repeat: if already selected, re-spin (edge case with animation)
-                // But since the wheel is random, just record and mark
                 if (selectionMode === 'no-repeat') {
-                    if (selectedSet.has(studentKey(winner))) {
-                        // Very rare edge case — just accept it this time
-                    }
                     selectedSet.add(studentKey(winner));
                     const remaining = students.filter(s => !selectedSet.has(studentKey(s))).length;
-                    btnClearMemory.textContent = `Reset (${remaining}/${students.length})`;
 
                     if (remaining === 0) {
                         btnClearMemory.textContent = `Reset (All done!)`;
+                    } else {
+                        btnClearMemory.textContent = `Reset (${remaining}/${students.length})`;
                     }
                 }
 
@@ -479,7 +484,9 @@
             // Segment change callback
             (student) => {
                 currentNameEl.textContent = student.name;
-            }
+            },
+            // Target index (-1 = random, >= 0 = forced landing)
+            targetIndex
         );
     });
 

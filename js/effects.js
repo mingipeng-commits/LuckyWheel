@@ -1,68 +1,12 @@
 /* ============================================
-   Visual Effects - Confetti, Rim Lights, Particles
+   Visual Effects - Confetti, Particles
    ============================================ */
 
 const Effects = (() => {
     let confettiCanvas, confettiCtx;
     let confettiParticles = [];
     let confettiAnimId = null;
-    let rimLightsEl;
-    let rimLightEls = [];
-    let rimAnimId = null;
     let isSpinning = false;
-
-    // ---- Rim Lights ----
-    function createRimLights() {
-        rimLightsEl = document.getElementById('rim-lights');
-        rimLightsEl.innerHTML = '';
-        rimLightEls = [];
-
-        const numLights = 24;
-        const container = rimLightsEl;
-        const rect = container.getBoundingClientRect();
-        const cx = rect.width / 2;
-        const cy = rect.height / 2;
-        const radius = cx - 8;
-
-        for (let i = 0; i < numLights; i++) {
-            const angle = (i / numLights) * Math.PI * 2 - Math.PI / 2;
-            const x = cx + Math.cos(angle) * radius - 8;
-            const y = cy + Math.sin(angle) * radius - 8;
-
-            const light = document.createElement('div');
-            light.className = 'rim-light';
-            light.style.left = x + 'px';
-            light.style.top = y + 'px';
-            rimLightEls.push(light);
-            container.appendChild(light);
-        }
-    }
-
-    function animateRimLights(timestamp) {
-        const glowClasses = ['glow-1', 'glow-2', 'glow-3', 'glow-4'];
-        const speed = isSpinning ? 100 : 500;
-        const offset = Math.floor(timestamp / speed);
-
-        rimLightEls.forEach((light, i) => {
-            light.className = 'rim-light';
-            const classIndex = (i + offset) % glowClasses.length;
-            light.classList.add(glowClasses[classIndex]);
-        });
-
-        rimAnimId = requestAnimationFrame(animateRimLights);
-    }
-
-    function startRimAnimation() {
-        if (rimAnimId) return;
-        rimAnimId = requestAnimationFrame(animateRimLights);
-    }
-
-    function stopRimAnimation() {
-        if (rimAnimId) {
-            cancelAnimationFrame(rimAnimId);
-            rimAnimId = null;
-        }
-    }
 
     function setSpinning(val) {
         isSpinning = val;
@@ -129,7 +73,6 @@ const Effects = (() => {
             '#00ff88', '#ff1493', '#7b68ee', '#ffd700'
         ];
 
-        // Create particles in bursts
         for (let i = 0; i < 150; i++) {
             confettiParticles.push({
                 x: window.innerWidth / 2 + (Math.random() - 0.5) * 200,
@@ -146,7 +89,6 @@ const Effects = (() => {
             });
         }
 
-        // Side cannons
         for (let side = 0; side < 2; side++) {
             for (let i = 0; i < 60; i++) {
                 confettiParticles.push({
@@ -229,9 +171,6 @@ const Effects = (() => {
     }
 
     return {
-        createRimLights,
-        startRimAnimation,
-        stopRimAnimation,
         setSpinning,
         startButtonLightShow,
         stopButtonLightShow,

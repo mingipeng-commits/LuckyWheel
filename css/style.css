@@ -563,15 +563,15 @@ select.form-input option {
     flex-shrink: 0;
 }
 
-/* Glow projection canvas */
+/* Full-window glow projection canvas */
 .glow-canvas {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 1;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
     pointer-events: none;
-    border-radius: 50%;
 }
 
 @media (max-width: 900px) {
@@ -659,47 +659,6 @@ select.form-input option {
         width: 90vw;
         max-height: 200px;
     }
-}
-
-/* Rim Lights */
-.rim-lights {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    pointer-events: none;
-    z-index: 5;
-}
-
-.rim-light {
-    position: absolute;
-    width: 16px;
-    height: 16px;
-    border-radius: 50%;
-    background: var(--rim-color);
-    box-shadow: 0 0 8px var(--rim-color), 0 0 16px var(--rim-color);
-    transition: all 0.3s;
-}
-
-.rim-light.glow-1 {
-    background: #ff00ff;
-    box-shadow: 0 0 10px #ff00ff, 0 0 20px #ff00ff, 0 0 30px #ff00ff;
-}
-
-.rim-light.glow-2 {
-    background: #00ffff;
-    box-shadow: 0 0 10px #00ffff, 0 0 20px #00ffff, 0 0 30px #00ffff;
-}
-
-.rim-light.glow-3 {
-    background: #ffff00;
-    box-shadow: 0 0 10px #ffff00, 0 0 20px #ffff00, 0 0 30px #ffff00;
-}
-
-.rim-light.glow-4 {
-    background: #ff4444;
-    box-shadow: 0 0 10px #ff4444, 0 0 20px #ff4444, 0 0 30px #ff4444;
 }
 
 /* Indicator Arrow */
