@@ -512,12 +512,14 @@
 
         btnSpin.classList.add('spinning');
         Effects.startButtonLightShow(btnSpin);
+        SoundEngine.playSpinMusic();
 
         LuckyWheel.spin(
             // Winner callback
             (winner) => {
                 btnSpin.classList.remove('spinning');
                 Effects.stopButtonLightShow(btnSpin);
+                SoundEngine.stopSpinMusic();
 
                 if (selectionMode === 'no-repeat') {
                     selectedSet.add(studentKey(winner));
