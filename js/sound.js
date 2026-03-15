@@ -230,7 +230,7 @@ const SoundEngine = (() => {
         const master = ctx.createGain();
         master.gain.value = 0;
         master.connect(ctx.destination);
-        master.gain.setTargetAtTime(0.10, ctx.currentTime, 0.8);
+        master.gain.setTargetAtTime(0.45, ctx.currentTime, 0.8);
 
         const now = ctx.currentTime;
         const allSrcs = [];
@@ -260,8 +260,8 @@ const SoundEngine = (() => {
 
                     const t = now + loop * totalPadDur + ci * chordDur;
                     env.gain.setValueAtTime(0, t);
-                    env.gain.linearRampToValueAtTime(0.12, t + 0.8);
-                    env.gain.setValueAtTime(0.12, t + chordDur - 0.8);
+                    env.gain.linearRampToValueAtTime(0.35, t + 0.8);
+                    env.gain.setValueAtTime(0.35, t + chordDur - 0.8);
                     env.gain.linearRampToValueAtTime(0, t + chordDur);
 
                     const lpf = ctx.createBiquadFilter();
@@ -297,7 +297,7 @@ const SoundEngine = (() => {
 
                 const t = now + loop * bellLoopDur + i * bellInterval;
                 env.gain.setValueAtTime(0, t);
-                env.gain.linearRampToValueAtTime(0.1, t + 0.02);
+                env.gain.linearRampToValueAtTime(0.25, t + 0.02);
                 env.gain.exponentialRampToValueAtTime(0.001, t + 1.2);
 
                 osc.connect(env);

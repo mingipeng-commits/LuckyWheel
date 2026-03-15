@@ -186,7 +186,7 @@ const LuckyWheel = (() => {
             const hx1 = centerX + Math.cos(midAngle) * highlightR;
             const hy1 = centerY + Math.sin(midAngle) * highlightR;
             const rimGrad = ctx.createRadialGradient(hx1, hy1, 0, hx1, hy1, wheelRadius * 0.35);
-            rimGrad.addColorStop(0, `hsla(${hue}, 100%, ${light + 25}%, ${0.25 + segGlow * 0.4})`);
+            rimGrad.addColorStop(0, `hsla(${hue}, 100%, ${light + 30}%, ${0.4 + segGlow * 0.6})`);
             rimGrad.addColorStop(1, `hsla(${hue}, ${sat}%, ${light}%, 0)`);
             ctx.fillStyle = rimGrad;
             ctx.fill();
@@ -211,8 +211,8 @@ const LuckyWheel = (() => {
                 centerX + Math.cos(startAngle) * wheelRadius,
                 centerY + Math.sin(startAngle) * wheelRadius
             );
-            ctx.strokeStyle = `hsla(${hue}, ${Math.min(sat + 10, 100)}%, ${Math.min(light + 22, 90)}%, 0.6)`;
-            ctx.lineWidth = 2.5;
+            ctx.strokeStyle = `hsla(${hue}, ${Math.min(sat + 10, 100)}%, ${Math.min(light + 30, 95)}%, 0.85)`;
+            ctx.lineWidth = 4;
             ctx.stroke();
 
             // Dark edge (bottom/right of boundary)
@@ -222,22 +222,22 @@ const LuckyWheel = (() => {
                 centerX + Math.cos(endAngle) * wheelRadius,
                 centerY + Math.sin(endAngle) * wheelRadius
             );
-            ctx.strokeStyle = `hsla(${hue}, ${sat}%, ${Math.max(light - 18, 8)}%, 0.7)`;
-            ctx.lineWidth = 2.5;
+            ctx.strokeStyle = `hsla(${hue}, ${sat}%, ${Math.max(light - 25, 5)}%, 0.9)`;
+            ctx.lineWidth = 4;
             ctx.stroke();
 
             // Outer arc rim highlight
             ctx.beginPath();
             ctx.arc(centerX, centerY, wheelRadius - 1.5, startAngle, endAngle);
-            ctx.strokeStyle = `hsla(${hue}, 100%, ${light + 18}%, 0.25)`;
-            ctx.lineWidth = 2;
+            ctx.strokeStyle = `hsla(${hue}, 100%, ${light + 22}%, 0.5)`;
+            ctx.lineWidth = 3;
             ctx.stroke();
 
             // Inner groove near hub
             ctx.beginPath();
             ctx.arc(centerX, centerY, hubRadius + 8, startAngle, endAngle);
-            ctx.strokeStyle = `rgba(0, 0, 0, 0.25)`;
-            ctx.lineWidth = 1.5;
+            ctx.strokeStyle = `rgba(0, 0, 0, 0.45)`;
+            ctx.lineWidth = 2.5;
             ctx.stroke();
 
             drawSegmentText(i, startAngle, sliceAngle);
@@ -271,12 +271,12 @@ const LuckyWheel = (() => {
         const availableLen = wheelRadius - hubRadius - 30;
         const actualSpacing = Math.min(charSpacing, availableLen / Math.max(name.length, 1));
 
-        // Start position: near hub, moving outward
-        const startR = hubRadius + 20 + actualSpacing * 0.5;
+        // Start position: near rim, moving inward (first char at edge)
+        const startR = wheelRadius - 14;
 
         for (let c = 0; c < name.length; c++) {
-            const r = startR + c * actualSpacing;
-            if (r > wheelRadius - 8) break; // don't draw past rim
+            const r = startR - c * actualSpacing;
+            if (r < hubRadius + 12) break; // don't draw past hub
 
             const cx = centerX + Math.cos(midAngle) * r;
             const cy = centerY + Math.sin(midAngle) * r;
@@ -301,10 +301,10 @@ const LuckyWheel = (() => {
             const idFontSize = Math.max(fontSize - 3, 7);
             ctx.font = `${idFontSize}px 'Segoe UI', sans-serif`;
 
-            const idStartR = startR + name.length * actualSpacing + 4;
+            const idStartR = startR - name.length * actualSpacing - 4;
             for (let c = 0; c < student.studentId.length; c++) {
-                const r = idStartR + c * idFontSize * 1.0;
-                if (r > wheelRadius - 6) break;
+                const r = idStartR - c * idFontSize * 1.0;
+                if (r < hubRadius + 10) break;
 
                 const cx = centerX + Math.cos(midAngle) * r;
                 const cy = centerY + Math.sin(midAngle) * r;

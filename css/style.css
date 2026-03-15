@@ -563,20 +563,19 @@ select.form-input option {
 .wheel-sidebar {
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    width: 220px;
+    gap: 6px;
+    width: 200px;
     flex-shrink: 0;
-    padding-top: 10px;
 }
 
 .btn-back {
-    background: none;
+    background: var(--bg-panel);
     border: 1px solid rgba(255, 0, 255, 0.3);
     color: var(--text-secondary);
-    padding: 10px 0;
-    border-radius: 10px;
+    padding: 9px 0;
+    border-radius: 8px;
     cursor: pointer;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     font-weight: 600;
     transition: all 0.3s;
     text-align: center;
@@ -598,13 +597,14 @@ select.form-input option {
 
 .btn-mode {
     flex: 1;
+    min-width: 0;
     background: rgba(139, 0, 255, 0.2);
     border: 1px solid var(--neon-purple);
     color: var(--neon-cyan);
-    padding: 8px 0;
-    border-radius: 10px;
+    padding: 9px 4px;
+    border-radius: 8px;
     cursor: pointer;
-    font-size: 0.82rem;
+    font-size: 0.8rem;
     font-weight: 700;
     transition: all 0.3s;
     text-align: center;
@@ -622,16 +622,20 @@ select.form-input option {
 
 .btn-clear-memory {
     flex: 1;
+    min-width: 0;
     background: rgba(255, 68, 68, 0.15);
     border: 1px solid rgba(255, 68, 68, 0.5);
     color: #ff6666;
-    padding: 8px 0;
-    border-radius: 10px;
+    padding: 9px 4px;
+    border-radius: 8px;
     cursor: pointer;
-    font-size: 0.78rem;
+    font-size: 0.8rem;
     font-weight: 600;
     transition: all 0.3s;
     text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .btn-clear-memory:hover {
