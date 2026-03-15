@@ -264,27 +264,27 @@ const LuckyWheel = (() => {
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
 
-        // Draw text radially: first character near center, last near rim
+        // Draw text radially: first character near hub, reading outward to rim
         const name = student.name;
         const charSpacing = fontSize * 1.15;
         const totalTextLen = name.length * charSpacing;
         const availableLen = wheelRadius - hubRadius - 30;
         const actualSpacing = Math.min(charSpacing, availableLen / Math.max(name.length, 1));
 
-        // Start position: near rim, moving inward (first char at edge)
-        const startR = wheelRadius - 14;
+        // Start position: near hub, moving outward
+        const startR = hubRadius + 20 + actualSpacing * 0.5;
 
         for (let c = 0; c < name.length; c++) {
-            const r = startR - c * actualSpacing;
-            if (r < hubRadius + 12) break; // don't draw past hub
+            const r = startR + c * actualSpacing;
+            if (r > wheelRadius - 8) break; // don't draw past rim
 
             const cx = centerX + Math.cos(midAngle) * r;
             const cy = centerY + Math.sin(midAngle) * r;
 
             ctx.save();
             ctx.translate(cx, cy);
-            // Rotate so character top faces the rim/edge
-            ctx.rotate(midAngle - Math.PI / 2);
+            // Rotate so character reads outward along the radius
+            ctx.rotate(midAngle + Math.PI / 2);
 
             // Shadow
             ctx.fillStyle = 'rgba(0, 0, 0, 0.55)';
@@ -301,17 +301,17 @@ const LuckyWheel = (() => {
             const idFontSize = Math.max(fontSize - 3, 7);
             ctx.font = `${idFontSize}px 'Segoe UI', sans-serif`;
 
-            const idStartR = startR - name.length * actualSpacing - 4;
+            const idStartR = startR + name.length * actualSpacing + 4;
             for (let c = 0; c < student.studentId.length; c++) {
-                const r = idStartR - c * idFontSize * 1.0;
-                if (r < hubRadius + 10) break;
+                const r = idStartR + c * idFontSize * 1.0;
+                if (r > wheelRadius - 6) break;
 
                 const cx = centerX + Math.cos(midAngle) * r;
                 const cy = centerY + Math.sin(midAngle) * r;
 
                 ctx.save();
                 ctx.translate(cx, cy);
-                ctx.rotate(midAngle - Math.PI / 2);
+                ctx.rotate(midAngle + Math.PI / 2);
                 ctx.fillStyle = 'rgba(255, 255, 255, 0.65)';
                 ctx.fillText(student.studentId[c], 0, 0);
                 ctx.restore();
