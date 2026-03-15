@@ -43,9 +43,9 @@ body {
     transform: translateX(-50%) translateY(-200%);
     z-index: 1000;
     text-align: center;
-    padding: 18px 50px;
-    width: 500px;
-    max-width: 90vw;
+    padding: 18px 60px;
+    width: 680px;
+    max-width: 92vw;
     background: linear-gradient(135deg, rgba(255, 0, 128, 0.92), rgba(139, 0, 255, 0.92));
     backdrop-filter: blur(10px);
     border-radius: 60px;
@@ -86,12 +86,12 @@ body {
     background: rgba(10, 10, 26, 0.85);
     border: 2px solid var(--neon-pink);
     border-radius: 50px;
-    padding: 12px 40px;
+    padding: 12px 50px;
     font-size: 1.8rem;
     font-weight: 700;
     text-align: center;
-    width: 400px;
-    max-width: 90vw;
+    width: 600px;
+    max-width: 92vw;
     box-shadow: 0 0 20px var(--accent-glow), inset 0 0 20px rgba(255, 0, 255, 0.1);
     transition: opacity 0.3s ease;
     overflow: hidden;

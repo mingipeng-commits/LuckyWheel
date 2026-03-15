@@ -17,6 +17,7 @@ const LuckyWheel = (() => {
     let onWinnerCallback = null;
     let onSegmentChangeCallback = null;
     let breathingAnimId = null;
+    let segmentPhases = [];  // per-segment breathing phase offsets & speed multipliers
 
     // Wheel dimensions
     let wheelRadius = 0;
@@ -63,12 +64,18 @@ const LuckyWheel = (() => {
 
     function generateColors(n) {
         colors = [];
+        segmentPhases = [];
         const goldenAngle = 137.508;
         for (let i = 0; i < n; i++) {
             const hue = (i * goldenAngle) % 360;
             const sat = 70 + (i % 3) * 5;
             const light = 48 + (i % 4) * 4;
             colors.push({ h: hue, s: sat, l: light, css: `hsl(${hue}, ${sat}%, ${light}%)` });
+            // Each segment breathes at a different speed with a random phase offset
+            segmentPhases.push({
+                offset: Math.random() * Math.PI * 2,
+                speed: 0.7 + Math.random() * 0.8  // 0.7x to 1.5x base speed
+            });
         }
         return colors;
     }
@@ -82,6 +89,8 @@ const LuckyWheel = (() => {
         startBreathing();
     }
 
+    let breatheTimestamp = 0;
+
     function startBreathing() {
         stopBreathing();
         if (students.length === 0) return;
@@ -91,7 +100,8 @@ const LuckyWheel = (() => {
                 breathingAnimId = null;
                 return;
             }
-            neonGlowIntensity = 0.15 + 0.1 * Math.sin(timestamp / 1200);
+            breatheTimestamp = timestamp;
+            neonGlowIntensity = 0.2;  // base level for general effects
             draw();
             breathingAnimId = requestAnimationFrame(breathe);
         }
@@ -128,23 +138,77 @@ const LuckyWheel = (() => {
         for (let i = 0; i < n; i++) {
             const startAngle = currentAngle + i * sliceAngle - Math.PI / 2;
             const endAngle = startAngle + sliceAngle;
+            const midAngle = startAngle + sliceAngle / 2;
 
+            const { h: hue, s: sat, l: light } = colors[i];
+
+            // Per-segment breathing intensity
+            let segGlow = neonGlowIntensity;
+            if (!isSpinning && segmentPhases[i]) {
+                const sp = segmentPhases[i];
+                segGlow = 0.12 + 0.18 * Math.sin(breatheTimestamp / 1200 * sp.speed + sp.offset);
+                segGlow = Math.max(0.02, segGlow);
+            }
+
+            // --- 3D segment: base fill with radial gradient ---
             ctx.beginPath();
             ctx.moveTo(centerX, centerY);
             ctx.arc(centerX, centerY, wheelRadius, startAngle, endAngle);
             ctx.closePath();
-            ctx.fillStyle = colors[i].css;
 
-            if (neonGlowIntensity > 0) {
-                ctx.shadowBlur = 12 * neonGlowIntensity;
-                ctx.shadowColor = colors[i].css;
+            // Radial gradient: lighter at outer edge, darker toward hub
+            const grad = ctx.createRadialGradient(centerX, centerY, hubRadius, centerX, centerY, wheelRadius);
+            grad.addColorStop(0, `hsl(${hue}, ${sat}%, ${Math.max(light - 12, 20)}%)`);
+            grad.addColorStop(0.5, `hsl(${hue}, ${sat}%, ${light}%)`);
+            grad.addColorStop(0.85, `hsl(${hue}, ${Math.min(sat + 8, 100)}%, ${light + 8}%)`);
+            grad.addColorStop(1, `hsl(${hue}, ${Math.min(sat + 5, 100)}%, ${light + 14}%)`);
+            ctx.fillStyle = grad;
+
+            if (segGlow > 0.05) {
+                ctx.shadowBlur = 14 * segGlow;
+                ctx.shadowColor = `hsl(${hue}, ${sat}%, ${light + 10}%)`;
             } else {
                 ctx.shadowBlur = 0;
             }
             ctx.fill();
             ctx.shadowBlur = 0;
 
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+            // --- 3D highlight along outer arc ---
+            ctx.save();
+            ctx.beginPath();
+            ctx.moveTo(centerX, centerY);
+            ctx.arc(centerX, centerY, wheelRadius, startAngle, endAngle);
+            ctx.closePath();
+            ctx.clip();
+
+            // Bright arc highlight near rim
+            const highlightR = wheelRadius - 6;
+            const hx1 = centerX + Math.cos(midAngle) * highlightR;
+            const hy1 = centerY + Math.sin(midAngle) * highlightR;
+            const rimGrad = ctx.createRadialGradient(hx1, hy1, 0, hx1, hy1, wheelRadius * 0.35);
+            rimGrad.addColorStop(0, `hsla(${hue}, 100%, ${light + 25}%, ${0.25 + segGlow * 0.4})`);
+            rimGrad.addColorStop(1, `hsla(${hue}, ${sat}%, ${light}%, 0)`);
+            ctx.fillStyle = rimGrad;
+            ctx.fill();
+
+            // Inner shadow near hub
+            const innerGrad = ctx.createRadialGradient(centerX, centerY, hubRadius * 0.5, centerX, centerY, wheelRadius * 0.45);
+            innerGrad.addColorStop(0, `rgba(0, 0, 0, 0.2)`);
+            innerGrad.addColorStop(1, `rgba(0, 0, 0, 0)`);
+            ctx.fillStyle = innerGrad;
+            ctx.beginPath();
+            ctx.moveTo(centerX, centerY);
+            ctx.arc(centerX, centerY, wheelRadius, startAngle, endAngle);
+            ctx.closePath();
+            ctx.fill();
+            ctx.restore();
+
+            // Segment border
+            ctx.beginPath();
+            ctx.moveTo(centerX, centerY);
+            ctx.arc(centerX, centerY, wheelRadius, startAngle, endAngle);
+            ctx.closePath();
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.18)';
             ctx.lineWidth = 1;
             ctx.stroke();
 
@@ -246,7 +310,16 @@ const LuckyWheel = (() => {
             const endAngle = startAngle + sliceAngle;
 
             const { h: hue, s: sat } = colors[i];
-            const alpha = 0.4 * neonGlowIntensity;
+
+            // Per-segment glow intensity
+            let segIntensity = neonGlowIntensity;
+            if (!isSpinning && segmentPhases[i]) {
+                const sp = segmentPhases[i];
+                segIntensity = 0.12 + 0.18 * Math.sin(breatheTimestamp / 1200 * sp.speed + sp.offset);
+                segIntensity = Math.max(0.02, segIntensity);
+            }
+
+            const alpha = 0.45 * segIntensity;
 
             glowCtx.save();
 
