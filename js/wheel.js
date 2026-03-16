@@ -512,7 +512,8 @@ const LuckyWheel = (() => {
 
     // ---- Spin ----
     // targetIndex: if >= 0, the wheel MUST land on this segment index
-    function spin(callback, segmentChangeCallback, targetIndex) {
+    // holdDuration: ms the user held the button (0 = quick tap, up to 3000+ = max power)
+    function spin(callback, segmentChangeCallback, targetIndex, holdDuration) {
         if (isSpinning || students.length === 0) return;
 
         isSpinning = true;
@@ -520,25 +521,26 @@ const LuckyWheel = (() => {
         onWinnerCallback = callback;
         onSegmentChangeCallback = segmentChangeCallback;
 
+        // Scale spin power based on hold duration (0–3000ms mapped to 0–1)
+        const holdFactor = Math.min((holdDuration || 0) / 3000, 1);
+        // fullTurns: 8–20 based on hold, spinDuration: 4.5s–10s
+        const baseTurns = 8 + Math.floor(holdFactor * 12);
+        const extraTurns = Math.floor(Math.random() * 3);
+
         const n = students.length;
         const sliceAngle = (Math.PI * 2) / n;
 
         // Calculate total rotation needed to land on target
         let totalRotation;
         if (targetIndex >= 0 && targetIndex < n) {
-            // We want segment targetIndex at the indicator (top).
-            // After spin: getCurrentSegmentIndex() should return targetIndex.
-            // That means: (-finalAngle mod 2PI) / sliceAngle = targetIndex
-            // So: finalAngle = -(targetIndex * sliceAngle + sliceAngle/2) + full rotations
-            // Add random full rotations for visual effect (8-14 full turns)
-            const fullTurns = (8 + Math.floor(Math.random() * 7)) * Math.PI * 2;
+            const fullTurns = (baseTurns + extraTurns) * Math.PI * 2;
             // Land in the middle of the target segment
             const targetAngle = -(targetIndex * sliceAngle + sliceAngle * (0.15 + Math.random() * 0.7));
             // Normalize so it's forward from current angle
             totalRotation = fullTurns + ((targetAngle - currentAngle) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2);
         } else {
             // Pure random: just pick a random total rotation
-            totalRotation = (8 + Math.floor(Math.random() * 7)) * Math.PI * 2 + Math.random() * Math.PI * 2;
+            totalRotation = (baseTurns + extraTurns) * Math.PI * 2 + Math.random() * Math.PI * 2;
         }
 
         const finalAngle = currentAngle + totalRotation;
@@ -552,7 +554,7 @@ const LuckyWheel = (() => {
         previousSegmentIndex = getCurrentSegmentIndex();
 
         // Use time-based easing instead of per-frame friction for precise landing
-        const spinDuration = 4500 + Math.random() * 2500; // 4.5 to 7 seconds
+        const spinDuration = 4500 + holdFactor * 5500 + Math.random() * 1000; // 4.5s–11s
         const startTime = performance.now();
         const startAngle = currentAngle;
 

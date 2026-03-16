@@ -476,8 +476,48 @@
         SoundEngine.stopBgmA();
     });
 
-    // ---- Spin Button ----
-    btnSpin.addEventListener('click', () => {
+    // ---- Spin Button (press & hold for power) ----
+    let spinPressStart = 0;
+    let spinChargeFrame = 0;
+    const spinTextEl = btnSpin.querySelector('.spin-text');
+
+    function startChargingVisual() {
+        const maxCharge = 3000;
+        function updateCharge() {
+            if (!spinPressStart) return;
+            const elapsed = performance.now() - spinPressStart;
+            const pct = Math.min(elapsed / maxCharge, 1);
+            // Scale button up slightly and intensify glow as charge builds
+            const scale = 1 + pct * 0.15;
+            btnSpin.style.transform = `translate(-50%, -50%) scale(${scale})`;
+            const glow = 20 + pct * 40;
+            const glowOuter = 40 + pct * 60;
+            btnSpin.style.boxShadow = `0 0 ${glow}px rgba(255, 0, 255, ${0.5 + pct * 0.5}), 0 0 ${glowOuter}px rgba(139, 0, 255, ${0.3 + pct * 0.4}), inset 0 -4px 10px rgba(0, 0, 0, 0.3), inset 0 4px 10px rgba(255, 255, 255, 0.2)`;
+            spinChargeFrame = requestAnimationFrame(updateCharge);
+        }
+        spinChargeFrame = requestAnimationFrame(updateCharge);
+    }
+
+    function stopChargingVisual() {
+        cancelAnimationFrame(spinChargeFrame);
+        btnSpin.style.transform = '';
+        btnSpin.style.boxShadow = '';
+    }
+
+    function handleSpinStart(e) {
+        if (LuckyWheel.isCurrentlySpinning()) return;
+        e.preventDefault();
+        spinPressStart = performance.now();
+        startChargingVisual();
+    }
+
+    function handleSpinEnd(e) {
+        if (!spinPressStart) return;
+        e.preventDefault();
+        const holdDuration = performance.now() - spinPressStart;
+        spinPressStart = 0;
+        stopChargingVisual();
+
         if (LuckyWheel.isCurrentlySpinning()) return;
 
         // Determine target index for no-repeat mode
@@ -549,9 +589,25 @@
                 currentNameEl.textContent = student.name;
             },
             // Target index (-1 = random, >= 0 = forced landing)
-            targetIndex
+            targetIndex,
+            // Hold duration for spin power
+            holdDuration
         );
+    }
+
+    btnSpin.addEventListener('pointerdown', handleSpinStart);
+    btnSpin.addEventListener('pointerup', handleSpinEnd);
+    btnSpin.addEventListener('pointerleave', (e) => {
+        // Cancel charge if pointer leaves button
+        if (spinPressStart) {
+            spinPressStart = 0;
+            stopChargingVisual();
+        }
     });
+    // Prevent context menu on long press (mobile)
+    btnSpin.addEventListener('contextmenu', (e) => e.preventDefault());
+    // Prevent default touch behavior
+    btnSpin.style.touchAction = 'none';
 
     // ---- Startup: restore saved students ----
     loadStudents();

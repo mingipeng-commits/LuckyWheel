@@ -848,7 +848,7 @@ select.form-input option {
 }
 
 .btn-spin:active {
-    transform: translate(-50%, -50%) scale(0.95);
+    /* Overridden by JS charging animation */
 }
 
 .btn-spin.spinning {
