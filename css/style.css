@@ -701,8 +701,8 @@ select.form-input option {
 
 .history-item {
     display: flex;
-    align-items: center;
-    gap: 10px;
+    flex-direction: column;
+    gap: 2px;
     padding: 8px 10px;
     background: var(--bg-card);
     border-radius: 8px;
@@ -711,11 +711,18 @@ select.form-input option {
     animation: slideIn 0.3s ease;
 }
 
+.history-item-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
 .history-item-number {
     color: var(--neon-cyan);
     font-weight: 700;
     font-size: 0.75rem;
-    min-width: 22px;
+    flex-shrink: 0;
 }
 
 .history-item-name {
@@ -729,13 +736,13 @@ select.form-input option {
 .history-item-id {
     color: var(--text-secondary);
     font-size: 0.75rem;
+    font-weight: 400;
 }
 
 .history-item-time {
     color: var(--text-secondary);
     font-size: 0.65rem;
     opacity: 0.7;
-    white-space: nowrap;
 }
 
 .history-panel::-webkit-scrollbar {

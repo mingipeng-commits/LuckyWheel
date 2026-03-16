@@ -428,12 +428,13 @@
         history.forEach((w, i) => {
             const item = document.createElement('div');
             item.className = 'history-item';
-            const idStr = w.studentId ? `<span class="history-item-id">${escapeHtml(w.studentId)}</span>` : '';
-            const timeStr = w.timestamp ? `<span class="history-item-time">${formatTimestamp(w.timestamp)}</span>` : '';
+            const idStr = w.studentId ? ` <span class="history-item-id">(${escapeHtml(w.studentId)})</span>` : '';
+            const timeStr = w.timestamp ? `<div class="history-item-time">${formatTimestamp(w.timestamp)}</div>` : '';
             item.innerHTML = `
-                <span class="history-item-number">#${i + 1}</span>
-                <span class="history-item-name">${escapeHtml(w.name)}</span>
-                ${idStr}
+                <div class="history-item-row">
+                    <span class="history-item-name">${escapeHtml(w.name)}${idStr}</span>
+                    <span class="history-item-number">#${i + 1}</span>
+                </div>
                 ${timeStr}
             `;
             historyList.appendChild(item);
