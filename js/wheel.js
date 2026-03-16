@@ -264,26 +264,32 @@ const LuckyWheel = (() => {
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
 
-        // Draw text radially: first character near rim, reading inward to hub
+        // Draw text radially from hub outward to rim
+        // With midAngle + PI/2 rotation, text naturally reads center-to-rim
+        // So first character near hub = first character you read
         const name = student.name;
         const charSpacing = fontSize * 1.15;
-        const totalTextLen = name.length * charSpacing;
         const availableLen = wheelRadius - hubRadius - 30;
-        const actualSpacing = Math.min(charSpacing, availableLen / Math.max(name.length, 1));
 
-        // Start position: near rim, moving inward
-        const startR = wheelRadius - 14;
+        // Calculate total chars (name + space + id) for spacing
+        const hasId = n <= 25 && student.studentId;
+        const idStr = hasId ? student.studentId : '';
+        const totalChars = name.length + (idStr ? 1 + idStr.length : 0);
+        const actualSpacing = Math.min(charSpacing, availableLen / Math.max(totalChars, 1));
 
+        // Start near hub, move outward
+        const startR = hubRadius + 20;
+
+        // Draw name characters (bold)
         for (let c = 0; c < name.length; c++) {
-            const r = startR - c * actualSpacing;
-            if (r < hubRadius + 12) break; // don't draw past hub
+            const r = startR + c * actualSpacing;
+            if (r > wheelRadius - 8) break;
 
             const cx = centerX + Math.cos(midAngle) * r;
             const cy = centerY + Math.sin(midAngle) * r;
 
             ctx.save();
             ctx.translate(cx, cy);
-            // Rotate so character reads outward along the radius
             ctx.rotate(midAngle + Math.PI / 2);
 
             // Shadow
@@ -296,15 +302,15 @@ const LuckyWheel = (() => {
             ctx.restore();
         }
 
-        // Student ID (smaller, placed along radius after the name)
-        if (n <= 25 && student.studentId) {
+        // Draw student ID (smaller, continuing outward after name)
+        if (hasId) {
             const idFontSize = Math.max(fontSize - 3, 7);
             ctx.font = `${idFontSize}px 'Segoe UI', sans-serif`;
 
-            const idStartR = startR - name.length * actualSpacing - 4;
-            for (let c = 0; c < student.studentId.length; c++) {
-                const r = idStartR - c * idFontSize * 1.0;
-                if (r < hubRadius + 10) break;
+            const idStartR = startR + (name.length + 1) * actualSpacing;
+            for (let c = 0; c < idStr.length; c++) {
+                const r = idStartR + c * idFontSize * 1.0;
+                if (r > wheelRadius - 8) break;
 
                 const cx = centerX + Math.cos(midAngle) * r;
                 const cy = centerY + Math.sin(midAngle) * r;
@@ -313,7 +319,7 @@ const LuckyWheel = (() => {
                 ctx.translate(cx, cy);
                 ctx.rotate(midAngle + Math.PI / 2);
                 ctx.fillStyle = 'rgba(255, 255, 255, 0.65)';
-                ctx.fillText(student.studentId[c], 0, 0);
+                ctx.fillText(idStr[c], 0, 0);
                 ctx.restore();
             }
         }
