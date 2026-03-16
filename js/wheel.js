@@ -264,9 +264,9 @@ const LuckyWheel = (() => {
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
 
-        // Draw text radially from hub outward to rim
-        // With midAngle + PI/2 rotation, text naturally reads center-to-rim
-        // So first character near hub = first character you read
+        // Draw text radially from rim inward to hub
+        // First character near rim, reading inward to center
+        // Rotation: midAngle - PI/2 so text reads rim-to-center
         const name = student.name;
         const charSpacing = fontSize * 1.15;
         const availableLen = wheelRadius - hubRadius - 30;
@@ -277,20 +277,20 @@ const LuckyWheel = (() => {
         const totalChars = name.length + (idStr ? 1 + idStr.length : 0);
         const actualSpacing = Math.min(charSpacing, availableLen / Math.max(totalChars, 1));
 
-        // Start near hub, move outward
-        const startR = hubRadius + 20;
+        // Start near rim, move inward
+        const startR = wheelRadius - 14;
 
-        // Draw name characters (bold)
+        // Draw name characters (bold) — name first, near rim
         for (let c = 0; c < name.length; c++) {
-            const r = startR + c * actualSpacing;
-            if (r > wheelRadius - 8) break;
+            const r = startR - c * actualSpacing;
+            if (r < hubRadius + 12) break;
 
             const cx = centerX + Math.cos(midAngle) * r;
             const cy = centerY + Math.sin(midAngle) * r;
 
             ctx.save();
             ctx.translate(cx, cy);
-            ctx.rotate(midAngle + Math.PI / 2);
+            ctx.rotate(midAngle - Math.PI / 2);
 
             // Shadow
             ctx.fillStyle = 'rgba(0, 0, 0, 0.55)';
@@ -302,22 +302,22 @@ const LuckyWheel = (() => {
             ctx.restore();
         }
 
-        // Draw student ID (smaller, continuing outward after name)
+        // Draw student ID (smaller, continuing inward after name)
         if (hasId) {
             const idFontSize = Math.max(fontSize - 3, 7);
             ctx.font = `${idFontSize}px 'Segoe UI', sans-serif`;
 
-            const idStartR = startR + (name.length + 1) * actualSpacing;
+            const idStartR = startR - (name.length + 1) * actualSpacing;
             for (let c = 0; c < idStr.length; c++) {
-                const r = idStartR + c * idFontSize * 1.0;
-                if (r > wheelRadius - 8) break;
+                const r = idStartR - c * idFontSize * 1.0;
+                if (r < hubRadius + 10) break;
 
                 const cx = centerX + Math.cos(midAngle) * r;
                 const cy = centerY + Math.sin(midAngle) * r;
 
                 ctx.save();
                 ctx.translate(cx, cy);
-                ctx.rotate(midAngle + Math.PI / 2);
+                ctx.rotate(midAngle - Math.PI / 2);
                 ctx.fillStyle = 'rgba(255, 255, 255, 0.65)';
                 ctx.fillText(idStr[c], 0, 0);
                 ctx.restore();
