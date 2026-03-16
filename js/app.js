@@ -408,9 +408,19 @@
 
     // ---- History ----
     function addToHistory(winner) {
-        history.unshift(winner);
+        history.unshift({ ...winner, timestamp: Date.now() });
         if (history.length > MAX_HISTORY) history.pop();
         renderHistory();
+    }
+
+    function formatTimestamp(ts) {
+        const d = new Date(ts);
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const dd = String(d.getDate()).padStart(2, '0');
+        const hh = String(d.getHours()).padStart(2, '0');
+        const mi = String(d.getMinutes()).padStart(2, '0');
+        const ss = String(d.getSeconds()).padStart(2, '0');
+        return `${mm}/${dd} ${hh}:${mi}:${ss}`;
     }
 
     function renderHistory() {
@@ -419,10 +429,12 @@
             const item = document.createElement('div');
             item.className = 'history-item';
             const idStr = w.studentId ? `<span class="history-item-id">${escapeHtml(w.studentId)}</span>` : '';
+            const timeStr = w.timestamp ? `<span class="history-item-time">${formatTimestamp(w.timestamp)}</span>` : '';
             item.innerHTML = `
                 <span class="history-item-number">#${i + 1}</span>
                 <span class="history-item-name">${escapeHtml(w.name)}</span>
                 ${idStr}
+                ${timeStr}
             `;
             historyList.appendChild(item);
         });

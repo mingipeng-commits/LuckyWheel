@@ -731,6 +731,13 @@ select.form-input option {
     font-size: 0.75rem;
 }
 
+.history-item-time {
+    color: var(--text-secondary);
+    font-size: 0.65rem;
+    opacity: 0.7;
+    white-space: nowrap;
+}
+
 .history-panel::-webkit-scrollbar {
     width: 4px;
 }
