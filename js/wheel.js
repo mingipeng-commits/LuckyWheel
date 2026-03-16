@@ -264,9 +264,8 @@ const LuckyWheel = (() => {
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
 
-        // Draw text radially from rim inward to hub
-        // First character near rim, reading inward to center
-        // Rotation: midAngle - PI/2 so text reads rim-to-center
+        // Draw text radially from rim inward to center
+        // Name first (near rim), then student ID (toward center)
         const name = student.name;
         const charSpacing = fontSize * 1.15;
         const availableLen = wheelRadius - hubRadius - 30;
@@ -280,6 +279,16 @@ const LuckyWheel = (() => {
         // Start near rim, move inward
         const startR = wheelRadius - 14;
 
+        // Determine rotation so characters are always readable:
+        // Normalize midAngle to [0, 2PI)
+        const normAngle = ((midAngle % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+        // If segment is in the left half of wheel (PI/2 < angle < 3PI/2),
+        // text along radius reads bottom-to-top, so use midAngle + PI/2.
+        // Otherwise (right half), text reads top-to-bottom, so use midAngle - PI/2.
+        const charRotation = (normAngle > Math.PI / 2 && normAngle < Math.PI * 3 / 2)
+            ? midAngle + Math.PI / 2
+            : midAngle - Math.PI / 2;
+
         // Draw name characters (bold) — name first, near rim
         for (let c = 0; c < name.length; c++) {
             const r = startR - c * actualSpacing;
@@ -290,7 +299,7 @@ const LuckyWheel = (() => {
 
             ctx.save();
             ctx.translate(cx, cy);
-            ctx.rotate(midAngle - Math.PI / 2);
+            ctx.rotate(charRotation);
 
             // Shadow
             ctx.fillStyle = 'rgba(0, 0, 0, 0.55)';
@@ -317,7 +326,7 @@ const LuckyWheel = (() => {
 
                 ctx.save();
                 ctx.translate(cx, cy);
-                ctx.rotate(midAngle - Math.PI / 2);
+                ctx.rotate(charRotation);
                 ctx.fillStyle = 'rgba(255, 255, 255, 0.65)';
                 ctx.fillText(idStr[c], 0, 0);
                 ctx.restore();
@@ -411,6 +420,17 @@ const LuckyWheel = (() => {
         }
     }
 
+    // ---- Indicator Ticker Wiggle ----
+    function wiggleIndicator() {
+        const arrow = document.querySelector('.indicator-arrow');
+        if (!arrow) return;
+        // Restart animation by removing and re-adding the class
+        arrow.classList.remove('tick');
+        // Force reflow to restart animation
+        void arrow.offsetWidth;
+        arrow.classList.add('tick');
+    }
+
     // ---- Segment Detection ----
     function getCurrentSegmentIndex() {
         const n = students.length;
@@ -495,6 +515,7 @@ const LuckyWheel = (() => {
             const currentIdx = getCurrentSegmentIndex();
             if (currentIdx !== previousSegmentIndex && currentIdx >= 0) {
                 SoundEngine.playTick();
+                wiggleIndicator();
                 if (onSegmentChangeCallback && currentIdx < students.length) {
                     onSegmentChangeCallback(students[currentIdx]);
                 }
