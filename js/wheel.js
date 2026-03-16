@@ -523,9 +523,9 @@ const LuckyWheel = (() => {
 
         // Scale spin power based on hold duration (0–3000ms mapped to 0–1)
         const holdFactor = Math.min((holdDuration || 0) / 3000, 1);
-        // fullTurns: 8–20 based on hold, spinDuration: 4.5s–10s
-        const baseTurns = 8 + Math.floor(holdFactor * 12);
-        const extraTurns = Math.floor(Math.random() * 3);
+        // fullTurns: 1.5–20 based on hold
+        const baseTurns = Math.round((1.5 + holdFactor * 18.5) * 10) / 10;
+        const extraTurns = holdFactor < 0.1 ? 0 : Math.floor(Math.random() * 3);
 
         const n = students.length;
         const sliceAngle = (Math.PI * 2) / n;
@@ -554,7 +554,7 @@ const LuckyWheel = (() => {
         previousSegmentIndex = getCurrentSegmentIndex();
 
         // Use time-based easing instead of per-frame friction for precise landing
-        const spinDuration = 4500 + holdFactor * 5500 + Math.random() * 1000; // 4.5s–11s
+        const spinDuration = 2000 + holdFactor * 9000 + Math.random() * 500; // 2s–11.5s
         const startTime = performance.now();
         const startAngle = currentAngle;
 
