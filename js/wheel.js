@@ -286,7 +286,7 @@ const LuckyWheel = (() => {
         // Draw name characters (bold, larger for CJK) — name first, near rim
         const isCJK = /[\u4e00-\u9fff\u3400-\u4dbf]/.test(name);
         if (isCJK) {
-            const cjkSize = Math.min(fontSize + 6, actualSpacing * 0.95);
+            const cjkSize = Math.min(fontSize + 10, actualSpacing * 0.95, sliceAngle * wheelRadius * 0.4);
             ctx.font = `bold ${cjkSize}px 'Microsoft JhengHei', 'PingFang TC', 'Noto Sans TC', sans-serif`;
         }
 
@@ -337,6 +337,35 @@ const LuckyWheel = (() => {
     }
 
     function drawHub() {
+        // During spin: draw disco glow radiating from center onto wheel surface
+        if (isSpinning) {
+            const dh = Effects.getDiscoHue();
+            const h1 = dh;
+            const h2 = (dh + 120) % 360;
+            const h3 = (dh + 240) % 360;
+            const glowRadius = wheelRadius * 0.55;
+            const alpha = Math.min(0.35, neonGlowIntensity * 0.35);
+
+            // Primary glow
+            const glow1 = ctx.createRadialGradient(centerX, centerY, hubRadius, centerX, centerY, glowRadius);
+            glow1.addColorStop(0, `hsla(${h1}, 100%, 65%, ${alpha})`);
+            glow1.addColorStop(0.5, `hsla(${h2}, 100%, 55%, ${alpha * 0.4})`);
+            glow1.addColorStop(1, `hsla(${h3}, 100%, 50%, 0)`);
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, glowRadius, 0, Math.PI * 2);
+            ctx.fillStyle = glow1;
+            ctx.fill();
+
+            // Secondary offset glow for depth
+            const glow2 = ctx.createRadialGradient(centerX, centerY, hubRadius * 0.5, centerX, centerY, glowRadius * 0.7);
+            glow2.addColorStop(0, `hsla(${h3}, 100%, 70%, ${alpha * 0.6})`);
+            glow2.addColorStop(1, `hsla(${h1}, 100%, 50%, 0)`);
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, glowRadius * 0.7, 0, Math.PI * 2);
+            ctx.fillStyle = glow2;
+            ctx.fill();
+        }
+
         ctx.beginPath();
         ctx.arc(centerX, centerY, hubRadius + 5, 0, Math.PI * 2);
         ctx.fillStyle = '#2d1b69';
@@ -423,33 +452,42 @@ const LuckyWheel = (() => {
     // ---- Indicator Ticker Wiggle ----
     let tickerArrow = null;
     let tickerPhase = 0;
+    const TICKER_FAST_THRESHOLD = 8; // angular velocity threshold for fast vs slow mode
 
-    function wiggleIndicator() {
-        if (!tickerArrow) tickerArrow = document.querySelector('.indicator-arrow');
-        if (!tickerArrow) return;
-        tickerArrow.classList.remove('tick');
-        void tickerArrow.offsetWidth;
-        tickerArrow.classList.add('tick');
-    }
-
-    // Continuous rapid wiggle driven by angular velocity during spin
+    // Two-phase ticker:
+    // Phase 1 (high speed): rapid random-like oscillation simulating blur
+    // Phase 2 (low speed): triggered bump on each segment boundary
     function updateTickerWiggle(velocity) {
         if (!tickerArrow) tickerArrow = document.querySelector('.indicator-arrow');
         if (!tickerArrow) return;
 
-        if (velocity < 0.5) {
-            // At low speed, let the CSS tick animation handle it
+        if (velocity >= TICKER_FAST_THRESHOLD) {
+            // Phase 1: Fast — rapid oscillation, large amplitude
+            tickerArrow.classList.remove('tick');
+            const amplitude = Math.min(18, 6 + velocity * 0.5);
+            const freq = 30 + velocity * 1.5;
+            tickerPhase += freq * 0.016;
+            // Add a secondary harmonic for more chaotic look
+            const angle = Math.sin(tickerPhase) * amplitude * 0.7
+                        + Math.sin(tickerPhase * 2.7) * amplitude * 0.3;
+            tickerArrow.style.transform = `translateX(-50%) rotate(${angle}deg)`;
+        } else if (velocity > 0.3) {
+            // Phase 2: Slow — clear transform, let segment-tick CSS handle it
             tickerArrow.style.transform = '';
-            return;
+        } else {
+            tickerArrow.style.transform = '';
         }
+    }
 
-        // Oscillate rapidly — higher speed = larger amplitude and faster frequency
-        const maxAmplitude = 14; // degrees
-        const amplitude = Math.min(maxAmplitude, velocity * 0.8);
-        const frequency = Math.min(velocity * 2, 40); // radians per frame-ish
-        tickerPhase += frequency * 0.016; // ~60fps timestep
-        const angle = Math.sin(tickerPhase) * amplitude;
-        tickerArrow.style.transform = `translateX(-50%) rotate(${angle}deg)`;
+    function triggerTickBump() {
+        if (!tickerArrow) tickerArrow = document.querySelector('.indicator-arrow');
+        if (!tickerArrow) return;
+        // Only show CSS tick bump when in slow phase
+        if (angularVelocity < TICKER_FAST_THRESHOLD) {
+            tickerArrow.classList.remove('tick');
+            void tickerArrow.offsetWidth;
+            tickerArrow.classList.add('tick');
+        }
     }
 
     function resetTicker() {
@@ -548,6 +586,7 @@ const LuckyWheel = (() => {
             const currentIdx = getCurrentSegmentIndex();
             if (currentIdx !== previousSegmentIndex && currentIdx >= 0) {
                 SoundEngine.playTick();
+                triggerTickBump();
                 if (onSegmentChangeCallback && currentIdx < students.length) {
                     onSegmentChangeCallback(students[currentIdx]);
                 }

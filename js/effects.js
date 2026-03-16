@@ -12,26 +12,56 @@ const Effects = (() => {
         isSpinning = val;
     }
 
-    // ---- Spin Button Light Show ----
+    // ---- Spin Button Disco Light Show ----
     let buttonAnimId = null;
+    let discoHue = 0;
+
+    // Disco color palette — vivid party colors
+    const discoColors = [
+        { h: 330, s: 100, l: 55 }, // hot pink
+        { h: 270, s: 100, l: 60 }, // purple
+        { h: 180, s: 100, l: 50 }, // cyan
+        { h: 120, s: 100, l: 50 }, // green
+        { h: 45,  s: 100, l: 55 }, // gold
+        { h: 0,   s: 100, l: 55 }, // red
+        { h: 210, s: 100, l: 60 }, // blue
+        { h: 300, s: 100, l: 60 }, // magenta
+    ];
 
     function animateSpinButton(btn, timestamp) {
         if (!isSpinning) {
             btn.style.boxShadow = '';
+            btn.style.background = '';
             buttonAnimId = null;
             return;
         }
 
-        const hue = (timestamp / 5) % 360;
-        const color1 = `hsl(${hue}, 100%, 60%)`;
-        const color2 = `hsl(${(hue + 120) % 360}, 100%, 60%)`;
+        // Rapid color cycling — 3 offset hues for layered glow
+        discoHue = (timestamp / 3) % 360;
+        const h1 = discoHue;
+        const h2 = (discoHue + 90) % 360;
+        const h3 = (discoHue + 200) % 360;
+        const h4 = (discoHue + 150) % 360;
 
+        const c1 = `hsl(${h1}, 100%, 60%)`;
+        const c2 = `hsl(${h2}, 100%, 55%)`;
+        const c3 = `hsl(${h3}, 100%, 60%)`;
+        const c4 = `hsl(${h4}, 100%, 50%)`;
+
+        // Pulsing intensity
+        const pulse = 0.7 + 0.3 * Math.sin(timestamp / 150);
+        const glowSize = Math.round(25 + 20 * pulse);
+        const outerGlow = Math.round(50 + 30 * pulse);
+
+        // Multi-layered colored glow + moving background gradient
+        btn.style.background = `radial-gradient(circle at ${50 + 20 * Math.sin(timestamp / 400)}% ${40 + 15 * Math.cos(timestamp / 350)}%, ${c1}, ${c4}, #4a0080)`;
         btn.style.boxShadow = `
-            0 0 20px ${color1},
-            0 0 40px ${color2},
-            0 0 60px ${color1},
+            0 0 ${glowSize}px ${c1},
+            0 0 ${outerGlow}px ${c2},
+            0 0 ${outerGlow + 25}px ${c3},
+            0 0 ${outerGlow + 50}px ${c4},
             inset 0 -4px 10px rgba(0,0,0,0.3),
-            inset 0 4px 10px rgba(255,255,255,0.2)
+            inset 0 4px 10px rgba(255,255,255,0.3)
         `;
 
         buttonAnimId = requestAnimationFrame((ts) => animateSpinButton(btn, ts));
@@ -48,6 +78,12 @@ const Effects = (() => {
             buttonAnimId = null;
         }
         btn.style.boxShadow = '';
+        btn.style.background = '';
+    }
+
+    // Get current disco hue for wheel to use
+    function getDiscoHue() {
+        return discoHue;
     }
 
     // ---- Confetti ----
@@ -174,6 +210,7 @@ const Effects = (() => {
         setSpinning,
         startButtonLightShow,
         stopButtonLightShow,
+        getDiscoHue,
         initConfetti,
         launchConfetti,
         showWinnerBurst,
