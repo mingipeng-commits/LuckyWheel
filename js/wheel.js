@@ -252,12 +252,12 @@ const LuckyWheel = (() => {
         const midAngle = startAngle + sliceAngle / 2;
         const n = students.length;
 
-        let fontSize = 16;
-        if (n > 12) fontSize = 14;
-        if (n > 20) fontSize = 12;
-        if (n > 30) fontSize = 10;
-        if (n > 45) fontSize = 9;
-        if (n > 60) fontSize = 7;
+        let fontSize = 20;
+        if (n > 12) fontSize = 18;
+        if (n > 20) fontSize = 15;
+        if (n > 30) fontSize = 12;
+        if (n > 45) fontSize = 10;
+        if (n > 60) fontSize = 8;
 
         ctx.save();
         ctx.font = `bold ${fontSize}px 'Segoe UI', sans-serif`;
@@ -286,7 +286,7 @@ const LuckyWheel = (() => {
         // Draw name characters (bold, larger for CJK) — name first, near rim
         const isCJK = /[\u4e00-\u9fff\u3400-\u4dbf]/.test(name);
         if (isCJK) {
-            const cjkSize = Math.min(fontSize + 10, actualSpacing * 0.95, sliceAngle * wheelRadius * 0.4);
+            const cjkSize = Math.min(fontSize + 8, actualSpacing * 0.95, sliceAngle * wheelRadius * 0.45);
             ctx.font = `bold ${cjkSize}px 'Microsoft JhengHei', 'PingFang TC', 'Noto Sans TC', sans-serif`;
         }
 
