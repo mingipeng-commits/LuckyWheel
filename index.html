@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lucky Wheel Picker</title>
+    <title>幸運轉盤</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -21,29 +21,29 @@
     <div class="main-container">
         <!-- Input Panel -->
         <div id="input-panel" class="input-panel">
-            <h1 class="title">Lucky Wheel Picker</h1>
-            <p class="subtitle">Upload or enter student names to get started</p>
+            <h1 class="title">幸運轉盤</h1>
+            <p class="subtitle">上傳或輸入學生名單來開始</p>
 
             <!-- Tabs -->
             <div class="tabs">
-                <button class="tab active" data-tab="upload">Upload File</button>
-                <button class="tab" data-tab="manual">Manual Input</button>
+                <button class="tab active" data-tab="upload">上傳檔案</button>
+                <button class="tab" data-tab="manual">手動輸入</button>
             </div>
 
             <!-- Upload Tab -->
             <div id="tab-upload" class="tab-content active">
                 <div id="drop-zone" class="drop-zone">
                     <div class="drop-zone-icon">&#128196;</div>
-                    <p>Drag & drop .csv or .xls/.xlsx file here</p>
-                    <p class="drop-zone-hint">or click to browse</p>
+                    <p>拖放 .csv 或 .xls/.xlsx 檔案到這裡</p>
+                    <p class="drop-zone-hint">或點擊選擇檔案</p>
                     <input type="file" id="file-input" accept=".csv,.xls,.xlsx" hidden>
                 </div>
                 <div id="file-info" class="file-info hidden">
                     <span id="file-name"></span>
-                    <button id="clear-file" class="btn-small">Clear</button>
+                    <button id="clear-file" class="btn-small">清除</button>
                 </div>
                 <div class="format-hint">
-                    <p>Expected columns: <strong>Name</strong>, <strong>StudentID (學號)</strong>, <strong>Gender</strong></p>
+                    <p>欄位格式：<strong>姓名</strong>、<strong>號碼</strong></p>
                 </div>
             </div>
 
@@ -51,17 +51,12 @@
             <div id="tab-manual" class="tab-content">
                 <div class="manual-form">
                     <div class="form-row">
-                        <input type="text" id="input-name" placeholder="Full Name" class="form-input">
-                        <input type="text" id="input-id" placeholder="學號" class="form-input form-input-small">
+                        <input type="text" id="input-name" placeholder="姓名" class="form-input">
+                        <input type="text" id="input-id" placeholder="號碼" class="form-input form-input-small">
                     </div>
                     <div class="form-row">
-                        <select id="input-gender" class="form-input form-input-small">
-                            <option value="">Gender</option>
-                            <option value="M" selected>Male</option>
-                            <option value="F">Female</option>
-                        </select>
-                        <button id="btn-add" class="btn-add">+ Add</button>
-                        <button id="btn-cancel-edit" class="btn-cancel-edit hidden">Cancel</button>
+                        <button id="btn-add" class="btn-add">+ 新增</button>
+                        <button id="btn-cancel-edit" class="btn-cancel-edit hidden">取消</button>
                     </div>
                 </div>
             </div>
@@ -69,15 +64,15 @@
             <!-- Student List -->
             <div id="student-list-container" class="student-list-container hidden">
                 <div class="student-list-header">
-                    <h3>Students (<span id="student-count">0</span>)</h3>
-                    <button id="btn-clear-all" class="btn-clear-all" title="Clear all students">Clear All</button>
+                    <h3>名單 (<span id="student-count">0</span>)</h3>
+                    <button id="btn-clear-all" class="btn-clear-all" title="清除全部">全部清除</button>
                 </div>
                 <div id="student-list" class="student-list"></div>
             </div>
 
             <!-- Load Button -->
             <button id="btn-load" class="btn-load hidden">
-                Load to Wheel
+                開始轉盤
             </button>
         </div>
 
@@ -100,15 +95,15 @@
 
                 <!-- Right Sidebar: controls + history -->
                 <div class="wheel-sidebar">
-                    <button id="btn-back" class="btn-back">&#8592; Edit List</button>
+                    <button id="btn-back" class="btn-back">&#8592; 編輯名單</button>
                     <div class="mode-toggle">
-                        <button id="btn-mode" class="btn-mode" title="Toggle selection mode">
-                            <span id="mode-label">Random</span>
+                        <button id="btn-mode" class="btn-mode" title="切換選取模式">
+                            <span id="mode-label">隨機</span>
                         </button>
-                        <button id="btn-clear-memory" class="btn-clear-memory hidden" title="Clear selection memory">Reset</button>
+                        <button id="btn-clear-memory" class="btn-clear-memory hidden" title="清除選取記錄">重置</button>
                     </div>
                     <div id="history-panel" class="history-panel">
-                        <h3 class="history-title">History</h3>
+                        <h3 class="history-title">歷史紀錄</h3>
                         <div id="history-list" class="history-list"></div>
                     </div>
                 </div>

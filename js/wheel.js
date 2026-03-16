@@ -266,6 +266,7 @@ const LuckyWheel = (() => {
 
         // Draw text radially from rim inward to center
         // Name first (near rim), then student ID (toward center)
+        // Character tops always face the rim (midAngle + PI/2)
         const name = student.name;
         const charSpacing = fontSize * 1.15;
         const availableLen = wheelRadius - hubRadius - 30;
@@ -279,17 +280,16 @@ const LuckyWheel = (() => {
         // Start near rim, move inward
         const startR = wheelRadius - 14;
 
-        // Determine rotation so characters are always readable:
-        // Normalize midAngle to [0, 2PI)
-        const normAngle = ((midAngle % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
-        // If segment is in the left half of wheel (PI/2 < angle < 3PI/2),
-        // text along radius reads bottom-to-top, so use midAngle + PI/2.
-        // Otherwise (right half), text reads top-to-bottom, so use midAngle - PI/2.
-        const charRotation = (normAngle > Math.PI / 2 && normAngle < Math.PI * 3 / 2)
-            ? midAngle + Math.PI / 2
-            : midAngle - Math.PI / 2;
+        // Unified rotation: character tops always point toward rim
+        const charRotation = midAngle + Math.PI / 2;
 
-        // Draw name characters (bold) — name first, near rim
+        // Draw name characters (bold, larger for CJK) — name first, near rim
+        const isCJK = /[\u4e00-\u9fff\u3400-\u4dbf]/.test(name);
+        if (isCJK) {
+            const cjkSize = Math.min(fontSize + 6, actualSpacing * 0.95);
+            ctx.font = `bold ${cjkSize}px 'Microsoft JhengHei', 'PingFang TC', 'Noto Sans TC', sans-serif`;
+        }
+
         for (let c = 0; c < name.length; c++) {
             const r = startR - c * actualSpacing;
             if (r < hubRadius + 12) break;
@@ -421,14 +421,44 @@ const LuckyWheel = (() => {
     }
 
     // ---- Indicator Ticker Wiggle ----
+    let tickerArrow = null;
+    let tickerPhase = 0;
+
     function wiggleIndicator() {
-        const arrow = document.querySelector('.indicator-arrow');
-        if (!arrow) return;
-        // Restart animation by removing and re-adding the class
-        arrow.classList.remove('tick');
-        // Force reflow to restart animation
-        void arrow.offsetWidth;
-        arrow.classList.add('tick');
+        if (!tickerArrow) tickerArrow = document.querySelector('.indicator-arrow');
+        if (!tickerArrow) return;
+        tickerArrow.classList.remove('tick');
+        void tickerArrow.offsetWidth;
+        tickerArrow.classList.add('tick');
+    }
+
+    // Continuous rapid wiggle driven by angular velocity during spin
+    function updateTickerWiggle(velocity) {
+        if (!tickerArrow) tickerArrow = document.querySelector('.indicator-arrow');
+        if (!tickerArrow) return;
+
+        if (velocity < 0.5) {
+            // At low speed, let the CSS tick animation handle it
+            tickerArrow.style.transform = '';
+            return;
+        }
+
+        // Oscillate rapidly — higher speed = larger amplitude and faster frequency
+        const maxAmplitude = 14; // degrees
+        const amplitude = Math.min(maxAmplitude, velocity * 0.8);
+        const frequency = Math.min(velocity * 2, 40); // radians per frame-ish
+        tickerPhase += frequency * 0.016; // ~60fps timestep
+        const angle = Math.sin(tickerPhase) * amplitude;
+        tickerArrow.style.transform = `translateX(-50%) rotate(${angle}deg)`;
+    }
+
+    function resetTicker() {
+        if (!tickerArrow) tickerArrow = document.querySelector('.indicator-arrow');
+        if (tickerArrow) {
+            tickerArrow.style.transform = '';
+            tickerArrow.classList.remove('tick');
+        }
+        tickerPhase = 0;
     }
 
     // ---- Segment Detection ----
@@ -511,11 +541,13 @@ const LuckyWheel = (() => {
                 whooshSound.update(Math.min(1, angularVelocity / maxSpeed));
             }
 
+            // Continuous ticker wiggle based on speed
+            updateTickerWiggle(angularVelocity);
+
             // Tick detection
             const currentIdx = getCurrentSegmentIndex();
             if (currentIdx !== previousSegmentIndex && currentIdx >= 0) {
                 SoundEngine.playTick();
-                wiggleIndicator();
                 if (onSegmentChangeCallback && currentIdx < students.length) {
                     onSegmentChangeCallback(students[currentIdx]);
                 }
@@ -530,6 +562,7 @@ const LuckyWheel = (() => {
                 isSpinning = false;
                 angularVelocity = 0;
                 neonGlowIntensity = 0;
+                resetTicker();
                 Effects.setSpinning(false);
 
                 if (whooshSound && whooshSound.stop) whooshSound.stop();

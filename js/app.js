@@ -47,7 +47,7 @@
     const clearFileBtn = document.getElementById('clear-file');
     const inputName = document.getElementById('input-name');
     const inputId = document.getElementById('input-id');
-    const inputGender = document.getElementById('input-gender');
+    // Gender removed from UI
     const btnAdd = document.getElementById('btn-add');
     const studentListContainer = document.getElementById('student-list-container');
     const studentList = document.getElementById('student-list');
@@ -116,7 +116,7 @@
         } else if (ext === 'xls' || ext === 'xlsx') {
             parseXLS(file);
         } else {
-            alert('Unsupported file format. Please use .csv, .xls, or .xlsx');
+            alert('不支援的檔案格式，請使用 .csv、.xls 或 .xlsx');
         }
     }
 
@@ -126,14 +126,13 @@
             const text = e.target.result;
             const lines = text.split(/\r?\n/).filter(l => l.trim());
             if (lines.length < 2) {
-                alert('CSV file appears to be empty.');
+                alert('CSV 檔案似乎是空的。');
                 return;
             }
 
             const header = lines[0].split(',').map(h => h.trim().toLowerCase());
             const nameIdx = findColumnIndex(header, ['name', 'fullname', 'full name', '姓名']);
-            const idIdx = findColumnIndex(header, ['studentid', 'student id', 'id', '學號', '学号']);
-            const genderIdx = findColumnIndex(header, ['gender', 'sex', '性別', '性别']);
+            const idIdx = findColumnIndex(header, ['studentid', 'student id', 'id', '學號', '学号', '號碼', '号码']);
 
             students = [];
             for (let i = 1; i < lines.length; i++) {
@@ -145,8 +144,7 @@
 
                 students.push({
                     name: name,
-                    studentId: idIdx >= 0 ? cols[idIdx]?.trim() || '' : '',
-                    gender: genderIdx >= 0 ? cols[genderIdx]?.trim() || '' : ''
+                    studentId: idIdx >= 0 ? cols[idIdx]?.trim() || '' : ''
                 });
             }
 
@@ -188,7 +186,7 @@
 
     function parseXLS(file) {
         if (typeof XLSX === 'undefined') {
-            alert('Excel file support is loading. Please try again in a moment, or use CSV format.');
+            alert('Excel 檔案支援正在載入，請稍後再試，或改用 CSV 格式。');
             return;
         }
 
@@ -201,24 +199,22 @@
                 const json = XLSX.utils.sheet_to_json(firstSheet, { defval: '' });
 
                 if (json.length === 0) {
-                    alert('The spreadsheet appears to be empty.');
+                    alert('試算表似乎是空的。');
                     return;
                 }
 
                 const sampleKeys = Object.keys(json[0]);
                 const nameKey = findKey(sampleKeys, ['name', 'fullname', 'full name', '姓名']);
-                const idKey = findKey(sampleKeys, ['studentid', 'student id', 'id', '學號', '学号']);
-                const genderKey = findKey(sampleKeys, ['gender', 'sex', '性別', '性别']);
+                const idKey = findKey(sampleKeys, ['studentid', 'student id', 'id', '學號', '学号', '號碼', '号码']);
 
                 students = json.map(row => ({
                     name: String(row[nameKey] || row[sampleKeys[0]] || '').trim(),
-                    studentId: idKey ? String(row[idKey] || '').trim() : '',
-                    gender: genderKey ? String(row[genderKey] || '').trim() : ''
+                    studentId: idKey ? String(row[idKey] || '').trim() : ''
                 })).filter(s => s.name);
 
                 updateStudentList();
             } catch (err) {
-                alert('Error reading Excel file: ' + err.message);
+                alert('讀取 Excel 檔案時發生錯誤：' + err.message);
             }
         };
         reader.readAsArrayBuffer(file);
@@ -259,20 +255,17 @@
             // Update existing
             students[editingIndex].name = name;
             students[editingIndex].studentId = inputId.value.trim();
-            students[editingIndex].gender = inputGender.value;
             cancelEdit();
         } else {
             // Add new
             students.push({
                 name: name,
-                studentId: inputId.value.trim(),
-                gender: inputGender.value
+                studentId: inputId.value.trim()
             });
         }
 
         inputName.value = '';
         inputId.value = '';
-        inputGender.value = 'M';
         inputName.focus();
 
         updateStudentList();
@@ -285,9 +278,8 @@
 
         inputName.value = s.name;
         inputId.value = s.studentId || '';
-        inputGender.value = s.gender || '';
 
-        btnAdd.textContent = 'Save';
+        btnAdd.textContent = '儲存';
         btnAdd.classList.add('editing');
         btnCancelEdit.classList.remove('hidden');
 
@@ -307,8 +299,7 @@
         editingIndex = -1;
         inputName.value = '';
         inputId.value = '';
-        inputGender.value = 'M';
-        btnAdd.textContent = '+ Add';
+        btnAdd.textContent = '+ 新增';
         btnAdd.classList.remove('editing');
         btnCancelEdit.classList.add('hidden');
         updateStudentList();
@@ -317,7 +308,7 @@
     // ---- Clear All ----
     btnClearAll.addEventListener('click', () => {
         if (students.length === 0) return;
-        if (!confirm('Are you sure you want to clear all students?')) return;
+        if (!confirm('確定要清除全部名單嗎？')) return;
         students = [];
         clearSavedStudents();
         updateStudentList();
@@ -341,17 +332,14 @@
             const item = document.createElement('div');
             item.className = 'student-item' + (i === editingIndex ? ' editing' : '');
 
-            const genderLabel = s.gender === 'M' ? 'Male' : s.gender === 'F' ? 'Female' : s.gender || '';
-
             item.innerHTML = `
                 <div class="student-item-info">
                     <span class="student-item-name">${escapeHtml(s.name)}</span>
                     ${s.studentId ? `<span class="student-item-id">${escapeHtml(s.studentId)}</span>` : ''}
-                    ${genderLabel ? `<span class="student-item-gender">${escapeHtml(genderLabel)}</span>` : ''}
                 </div>
                 <div class="student-item-actions">
-                    <button class="btn-edit" data-index="${i}" title="Edit">Edit</button>
-                    <button class="btn-delete" data-index="${i}" title="Remove">&times;</button>
+                    <button class="btn-edit" data-index="${i}" title="編輯">編輯</button>
+                    <button class="btn-delete" data-index="${i}" title="刪除">&times;</button>
                 </div>
             `;
 
@@ -386,12 +374,12 @@
     btnMode.addEventListener('click', () => {
         if (selectionMode === 'random') {
             selectionMode = 'no-repeat';
-            modeLabel.textContent = 'No Repeat';
+            modeLabel.textContent = '不重複';
             btnMode.classList.add('no-repeat');
             btnClearMemory.classList.remove('hidden');
         } else {
             selectionMode = 'random';
-            modeLabel.textContent = 'Random';
+            modeLabel.textContent = '隨機';
             btnMode.classList.remove('no-repeat');
             btnClearMemory.classList.add('hidden');
         }
@@ -399,7 +387,7 @@
 
     btnClearMemory.addEventListener('click', () => {
         selectedSet.clear();
-        btnClearMemory.textContent = 'Reset';
+        btnClearMemory.textContent = '重置';
     });
 
     function getAvailableForSpin() {
@@ -443,7 +431,7 @@
     // ---- Load to Wheel ----
     btnLoad.addEventListener('click', () => {
         if (students.length < 2) {
-            alert('Please add at least 2 students.');
+            alert('請至少新增 2 位學生。');
             return;
         }
 
@@ -498,7 +486,7 @@
             targetIndex = students.findIndex(s => studentKey(s) === studentKey(chosen));
 
             const remaining = available.length;
-            btnClearMemory.textContent = `Reset (${remaining}/${students.length})`;
+            btnClearMemory.textContent = `重置 (${remaining}/${students.length})`;
         }
 
         Effects.hideWinnerBurst();
@@ -523,17 +511,16 @@
                     const remaining = students.filter(s => !selectedSet.has(studentKey(s))).length;
 
                     if (remaining === 0) {
-                        btnClearMemory.textContent = `Reset (All done!)`;
+                        btnClearMemory.textContent = `重置 (全部完成！)`;
                     } else {
-                        btnClearMemory.textContent = `Reset (${remaining}/${students.length})`;
+                        btnClearMemory.textContent = `重置 (${remaining}/${students.length})`;
                     }
                 }
 
                 addToHistory(winner);
 
-                const genderStr = winner.gender === 'M' ? ' (Male)' : winner.gender === 'F' ? ' (Female)' : '';
                 const idStr = winner.studentId ? ` - ${winner.studentId}` : '';
-                winnerText.textContent = `${winner.name}${idStr}${genderStr}`;
+                winnerText.textContent = `${winner.name}${idStr}`;
 
                 setTimeout(() => {
                     currentNameDisplay.classList.add('hidden');
