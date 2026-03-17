@@ -54,7 +54,13 @@ const LuckyWheel = (() => {
         glowCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
         wheelRadius = canvasSize / 2 - 10;
-        hubRadius = Math.round(wheelRadius * 0.2);
+        // Match hub to the CSS spin button so segments butt right up against it
+        const btnSpin = document.querySelector('.btn-spin');
+        if (btnSpin) {
+            hubRadius = Math.round(btnSpin.offsetWidth / 2);
+        } else {
+            hubRadius = Math.round(wheelRadius * 0.18);
+        }
         centerX = canvasSize / 2;
         centerY = canvasSize / 2;
 
@@ -236,7 +242,7 @@ const LuckyWheel = (() => {
 
             // Inner groove near hub
             ctx.beginPath();
-            ctx.arc(centerX, centerY, hubRadius + 8, startAngle, endAngle);
+            ctx.arc(centerX, centerY, hubRadius + 3, startAngle, endAngle);
             ctx.strokeStyle = `rgba(0, 0, 0, 0.45)`;
             ctx.lineWidth = 2.5;
             ctx.stroke();
@@ -370,7 +376,7 @@ const LuckyWheel = (() => {
         }
 
         ctx.beginPath();
-        ctx.arc(centerX, centerY, hubRadius + 5, 0, Math.PI * 2);
+        ctx.arc(centerX, centerY, hubRadius + 2, 0, Math.PI * 2);
         ctx.fillStyle = '#2d1b69';
         ctx.fill();
         ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
