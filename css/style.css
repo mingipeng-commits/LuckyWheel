@@ -500,6 +500,41 @@ select.form-input option {
     box-shadow: 0 0 10px rgba(0, 255, 255, 0.15);
 }
 
+/* Order Toggle */
+.order-toggle {
+    display: flex;
+    gap: 0;
+    margin-top: 16px;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 0, 255, 0.3);
+}
+
+.order-toggle.hidden {
+    display: none;
+}
+
+.order-option {
+    flex: 1;
+    padding: 10px 8px;
+    background: transparent;
+    color: var(--text-secondary);
+    border: none;
+    cursor: pointer;
+    font-size: 0.88rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.order-option.active {
+    background: linear-gradient(135deg, var(--neon-magenta), var(--neon-purple));
+    color: white;
+}
+
+.order-option:hover:not(.active) {
+    background: rgba(255, 0, 255, 0.1);
+}
+
 /* Load Button */
 .btn-load {
     display: block;

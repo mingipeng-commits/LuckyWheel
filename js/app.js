@@ -10,6 +10,8 @@
     const MAX_HISTORY = 30;
     let selectionMode = 'random'; // 'random' | 'no-repeat'
     let selectedSet = new Set();  // names already selected in no-repeat mode
+    let loadOrder = 'shuffle';    // 'shuffle' | 'original'
+    let wheelStudents = [];       // the (possibly shuffled) array sent to the wheel
 
     // ---- LocalStorage helpers ----
     function saveStudents() {
@@ -64,6 +66,8 @@
     const modeLabel = document.getElementById('mode-label');
     const btnClearMemory = document.getElementById('btn-clear-memory');
     const btnClearAll = document.getElementById('btn-clear-all');
+    const orderToggle = document.getElementById('order-toggle');
+    const orderOptions = document.querySelectorAll('.order-option');
 
     // ---- Tab Switching ----
     tabBtns.forEach(btn => {
@@ -322,9 +326,11 @@
         if (students.length > 0) {
             studentListContainer.classList.remove('hidden');
             btnLoad.classList.remove('hidden');
+            orderToggle.classList.remove('hidden');
         } else {
             studentListContainer.classList.add('hidden');
             btnLoad.classList.add('hidden');
+            orderToggle.classList.add('hidden');
         }
 
         studentList.innerHTML = '';
@@ -441,6 +447,23 @@
         });
     }
 
+    // ---- Order Toggle ----
+    orderOptions.forEach(btn => {
+        btn.addEventListener('click', () => {
+            orderOptions.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            loadOrder = btn.dataset.order;
+        });
+    });
+
+    function shuffleArray(arr) {
+        for (let i = arr.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [arr[i], arr[j]] = [arr[j], arr[i]];
+        }
+        return arr;
+    }
+
     // ---- Load to Wheel ----
     btnLoad.addEventListener('click', () => {
         if (students.length < 2) {
@@ -455,7 +478,9 @@
 
         const canvas = document.getElementById('wheel-canvas');
         LuckyWheel.init(canvas);
-        LuckyWheel.setStudents([...students]);
+        wheelStudents = [...students];
+        if (loadOrder === 'shuffle') shuffleArray(wheelStudents);
+        LuckyWheel.setStudents(wheelStudents);
 
         Effects.initConfetti();
 
@@ -535,8 +560,8 @@
             // Pick a random one from the available pool
             const chosen = available[Math.floor(Math.random() * available.length)];
 
-            // Find its index in the wheel's student array (which matches students array order)
-            targetIndex = students.findIndex(s => studentKey(s) === studentKey(chosen));
+            // Find its index in the wheel's student array (may be shuffled)
+            targetIndex = wheelStudents.findIndex(s => studentKey(s) === studentKey(chosen));
 
             const remaining = available.length;
             btnClearMemory.textContent = `重置 (${remaining}/${students.length})`;
