@@ -280,7 +280,7 @@ const LuckyWheel = (() => {
         const actualSpacing = Math.min(charSpacing, availableLen / Math.max(totalChars, 1));
 
         // Start near rim, move inward
-        const startR = wheelRadius - 14;
+        const startR = wheelRadius - Math.max(20, wheelRadius * 0.06);
 
         // Unified rotation: character tops always point toward rim
         const charRotation = midAngle + Math.PI / 2;
