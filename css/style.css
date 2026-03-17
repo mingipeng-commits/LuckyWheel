@@ -535,6 +535,9 @@ select.form-input option {
     align-items: flex-start;
     justify-content: center;
     width: 100%;
+    height: 100vh;
+    padding: 10px;
+    overflow: hidden;
 }
 
 .wheel-container.hidden {
@@ -544,19 +547,21 @@ select.form-input option {
 /* Wheel Stage: wheel + sidebar side by side */
 .wheel-stage {
     display: flex;
-    align-items: flex-start;
+    align-items: stretch;
     justify-content: center;
     gap: 16px;
     width: 100%;
-    max-width: 900px;
+    height: 100%;
 }
 
-/* Wheel Frame */
+/* Wheel Frame: fill remaining space after sidebar */
 .wheel-frame {
     position: relative;
-    width: 600px;
-    height: 600px;
-    flex-shrink: 0;
+    flex: 1 1 auto;
+    min-width: 0;
+    aspect-ratio: 1 / 1;
+    max-height: 100%;
+    align-self: center;
 }
 
 /* Right Sidebar: controls + history stacked vertically */
@@ -564,8 +569,10 @@ select.form-input option {
     display: flex;
     flex-direction: column;
     gap: 6px;
-    width: 200px;
+    width: 220px;
     flex-shrink: 0;
+    max-height: 100%;
+    overflow-y: auto;
 }
 
 .btn-back {
@@ -657,14 +664,15 @@ select.form-input option {
     pointer-events: none;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 700px) {
     .wheel-stage {
         flex-direction: column;
         align-items: center;
     }
     .wheel-frame {
         width: 90vw;
-        height: 90vw;
+        max-height: none;
+        flex: none;
     }
     .wheel-sidebar {
         width: 90vw;

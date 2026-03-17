@@ -41,7 +41,7 @@ const LuckyWheel = (() => {
         const size = Math.min(frame.clientWidth, frame.clientHeight);
         const dpr = window.devicePixelRatio || 1;
 
-        const canvasSize = size - 40;
+        const canvasSize = Math.max(size - 20, 200);
         canvas.width = canvasSize * dpr;
         canvas.height = canvasSize * dpr;
         canvas.style.width = canvasSize + 'px';
@@ -272,7 +272,7 @@ const LuckyWheel = (() => {
         const availableLen = wheelRadius - hubRadius - 30;
 
         // Calculate total chars (name + space + id) for spacing
-        const hasId = n <= 25 && student.studentId;
+        const hasId = !!student.studentId;
         const idStr = hasId ? student.studentId : '';
         const totalChars = name.length + (idStr ? 1 + idStr.length : 0);
         const actualSpacing = Math.min(charSpacing, availableLen / Math.max(totalChars, 1));
