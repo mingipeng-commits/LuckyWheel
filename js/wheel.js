@@ -23,7 +23,7 @@ const LuckyWheel = (() => {
     let wheelRadius = 0;
     let centerX = 0;
     let centerY = 0;
-    const hubRadius = 55;
+    let hubRadius = 55;
 
     function init(canvasEl) {
         canvas = canvasEl;
@@ -54,6 +54,7 @@ const LuckyWheel = (() => {
         glowCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
         wheelRadius = canvasSize / 2 - 10;
+        hubRadius = Math.round(wheelRadius * 0.2);
         centerX = canvasSize / 2;
         centerY = canvasSize / 2;
 
