@@ -252,12 +252,14 @@ const LuckyWheel = (() => {
         const midAngle = startAngle + sliceAngle / 2;
         const n = students.length;
 
-        let fontSize = 20;
-        if (n > 12) fontSize = 18;
-        if (n > 20) fontSize = 15;
-        if (n > 30) fontSize = 12;
-        if (n > 45) fontSize = 10;
-        if (n > 60) fontSize = 8;
+        // Scale font size relative to wheel radius (base reference: radius 270)
+        const scale = wheelRadius / 270;
+        let fontSize = Math.round(20 * scale);
+        if (n > 12) fontSize = Math.round(18 * scale);
+        if (n > 20) fontSize = Math.round(15 * scale);
+        if (n > 30) fontSize = Math.round(13 * scale);
+        if (n > 45) fontSize = Math.round(11 * scale);
+        if (n > 60) fontSize = Math.round(9 * scale);
 
         ctx.save();
         ctx.font = `bold ${fontSize}px 'Segoe UI', sans-serif`;
