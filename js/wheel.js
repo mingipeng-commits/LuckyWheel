@@ -560,21 +560,22 @@ const LuckyWheel = (() => {
         const startTime = performance.now();
         const startAngle = currentAngle;
 
-        function easeOutQuint(t) {
-            return 1 - Math.pow(1 - t, 5);
+        // Higher exponent = more dramatic final slowdown (crawl before landing)
+        function easeOutSeptic(t) {
+            return 1 - Math.pow(1 - t, 7);
         }
 
         function animate(now) {
             const elapsed = now - startTime;
             const progress = Math.min(elapsed / spinDuration, 1);
-            const easedProgress = easeOutQuint(progress);
+            const easedProgress = easeOutSeptic(progress);
 
             currentAngle = startAngle + totalRotation * easedProgress;
 
             // Derive angular velocity for sound/effects
-            // Derivative of easeOutQuint: 5 * (1 - t)^4 * totalRotation / spinDuration
+            // Derivative of easeOutSeptic: 7 * (1 - t)^6 * totalRotation / spinDuration
             const t = progress;
-            angularVelocity = 5 * Math.pow(1 - t, 4) * totalRotation / (spinDuration / 1000);
+            angularVelocity = 7 * Math.pow(1 - t, 6) * totalRotation / (spinDuration / 1000);
 
             const maxSpeed = 27;
             neonGlowIntensity = Math.min(1, angularVelocity / (maxSpeed * 0.4));
