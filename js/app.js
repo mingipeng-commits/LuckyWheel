@@ -439,6 +439,14 @@
         return s.name + '|' + (s.studentId || '');
     }
 
+    // Normalize name for admin list matching — strips invisible chars, trims, lowercases
+    function normalizeName(name) {
+        return name
+            .replace(/[\u200B-\u200D\uFEFF\u00A0\u2060\u2028\u2029]/g, '')
+            .trim()
+            .toLowerCase();
+    }
+
     // ---- History ----
     function addToHistory(winner) {
         history.unshift({ ...winner, timestamp: Date.now() });
@@ -576,49 +584,55 @@
 
         if (LuckyWheel.isCurrentlySpinning()) return;
 
-        // Determine target index — respects blacklist & whitelist
-        // Always pick from wheelStudents (the actual wheel) so indexOf is reliable
+        // ---- Target selection: blacklist & whitelist ----
+        console.log('[SPIN] round:', spinRoundCounter, 'mode:', selectionMode,
+            'whitelist:', whitelist, 'blacklist:', blacklist);
+
+        // Start with all students currently on the wheel
         let candidates = [...wheelStudents];
 
-        // 1. Apply blacklist — remove blacklisted names
+        // 1. Blacklist — remove names that must never be picked
         if (blacklist.length > 0) {
-            const blNames = new Set(blacklist.map(n => n.trim().toLowerCase()));
-            const filtered = candidates.filter(s => !blNames.has(s.name.trim().toLowerCase()));
+            const blSet = new Set(blacklist.map(normalizeName));
+            const before = candidates.length;
+            const filtered = candidates.filter(s => !blSet.has(normalizeName(s.name)));
+            console.log('[SPIN] blacklist removed:', before - filtered.length, 'of', before);
             if (filtered.length > 0) candidates = filtered;
         }
 
-        // 2. Apply no-repeat — remove already-selected
+        // 2. No-repeat — remove already-selected
         if (selectionMode === 'no-repeat') {
             const available = candidates.filter(s => !selectedSet.has(studentKey(s)));
             if (available.length === 0) {
                 selectedSet.clear();
-                // candidates stays as-is (all non-blacklisted)
             } else {
                 candidates = available;
             }
         }
 
-        // 3. Whitelist — guarantee pick from whitelist in first 6 rounds
+        // 3. Whitelist — force pick from whitelist in first 6 rounds
         let chosen = null;
         if (spinRoundCounter < 6 && whitelist.length > 0) {
-            const wlNames = new Set(whitelist.map(n => n.trim().toLowerCase()));
+            const wlSet = new Set(whitelist.map(normalizeName));
             const wlPicks = candidates.filter(s =>
-                wlNames.has(s.name.trim().toLowerCase()) &&
-                !whitelistPicked.has(s.name.trim().toLowerCase())
+                wlSet.has(normalizeName(s.name)) &&
+                !whitelistPicked.has(normalizeName(s.name))
             );
+            console.log('[SPIN] whitelist candidates:', wlPicks.map(s => s.name));
             if (wlPicks.length > 0) {
                 chosen = wlPicks[Math.floor(Math.random() * wlPicks.length)];
-                whitelistPicked.add(chosen.name.trim().toLowerCase());
+                whitelistPicked.add(normalizeName(chosen.name));
             }
         }
 
-        // 4. If no whitelist pick, random from candidates
+        // 4. Fallback — random from remaining candidates
         if (!chosen) {
             chosen = candidates[Math.floor(Math.random() * candidates.length)];
         }
 
-        // 5. Map to wheel index — use indexOf (same object references, always reliable)
+        // 5. Map to wheel segment index (same object refs → indexOf always works)
         const targetIndex = wheelStudents.indexOf(chosen);
+        console.log('[SPIN] chosen:', chosen.name, 'targetIndex:', targetIndex);
 
         spinRoundCounter++;
 
@@ -640,6 +654,7 @@
         LuckyWheel.spin(
             // Winner callback
             (winner) => {
+                console.log('[SPIN] winner landed:', winner.name);
                 btnSpin.classList.remove('spinning');
                 Effects.stopButtonLightShow(btnSpin);
                 SoundEngine.stopSpinMusic();
@@ -744,17 +759,24 @@
     adminSaveBtn.addEventListener('click', () => {
         whitelist = adminWhitelistEl.value
             .split('\n')
-            .map(s => s.trim())
+            .map(s => s.replace(/[\u200B-\u200D\uFEFF\u00A0\u2060\u2028\u2029]/g, '').trim())
             .filter(s => s.length > 0);
         blacklist = adminBlacklistEl.value
             .split('\n')
-            .map(s => s.trim())
+            .map(s => s.replace(/[\u200B-\u200D\uFEFF\u00A0\u2060\u2028\u2029]/g, '').trim())
             .filter(s => s.length > 0);
         saveAdminLists();
         // Reset whitelist round tracking so it takes effect from the next spin
         spinRoundCounter = 0;
         whitelistPicked = new Set();
-        closeAdmin();
+        console.log('[ADMIN] saved whitelist:', whitelist, 'blacklist:', blacklist);
+        // Visual confirmation
+        const origText = adminSaveBtn.textContent;
+        adminSaveBtn.textContent = '已儲存!';
+        setTimeout(() => {
+            adminSaveBtn.textContent = origText;
+            closeAdmin();
+        }, 600);
     });
 
     // ---- Startup: restore saved students & admin lists ----
