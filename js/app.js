@@ -591,32 +591,31 @@
             pool = [...students];
         }
 
+        // Build blacklist set once for reuse
+        const blSet = blacklist.length > 0
+            ? new Set(blacklist.map(n => n.trim().toLowerCase()))
+            : null;
+
         // Remove blacklisted names from pool
-        if (blacklist.length > 0) {
-            const blSet = new Set(blacklist.map(n => n.toLowerCase()));
-            pool = pool.filter(s => !blSet.has(s.name.toLowerCase()));
-            // If blacklist removed everyone, fall back to full pool
-            if (pool.length === 0) {
-                pool = selectionMode === 'no-repeat'
-                    ? students.filter(s => !selectedSet.has(studentKey(s)))
-                    : [...students];
-                if (pool.length === 0) {
-                    selectedSet.clear();
-                    pool = [...students];
-                }
+        if (blSet) {
+            pool = pool.filter(s => !blSet.has(s.name.trim().toLowerCase()));
+            // If blacklist + no-repeat removed everyone, reset no-repeat but keep blacklist
+            if (pool.length === 0 && selectionMode === 'no-repeat') {
+                selectedSet.clear();
+                pool = students.filter(s => !blSet.has(s.name.trim().toLowerCase()));
             }
         }
 
         // Whitelist: guarantee pick from whitelist in first 6 rounds
         let chosen;
-        if (spinRoundCounter < 6 && whitelist.length > 0) {
-            const wlSet = new Set(whitelist.map(n => n.toLowerCase()));
+        if (pool.length > 0 && spinRoundCounter < 6 && whitelist.length > 0) {
+            const wlSet = new Set(whitelist.map(n => n.trim().toLowerCase()));
             const wlCandidates = pool.filter(s =>
-                wlSet.has(s.name.toLowerCase()) && !whitelistPicked.has(s.name.toLowerCase())
+                wlSet.has(s.name.trim().toLowerCase()) && !whitelistPicked.has(s.name.trim().toLowerCase())
             );
             if (wlCandidates.length > 0) {
                 chosen = wlCandidates[Math.floor(Math.random() * wlCandidates.length)];
-                whitelistPicked.add(chosen.name.toLowerCase());
+                whitelistPicked.add(chosen.name.trim().toLowerCase());
             }
         }
 
@@ -759,6 +758,9 @@
             .map(s => s.trim())
             .filter(s => s.length > 0);
         saveAdminLists();
+        // Reset whitelist round tracking so it takes effect from the next spin
+        spinRoundCounter = 0;
+        whitelistPicked = new Set();
         closeAdmin();
     });
 
