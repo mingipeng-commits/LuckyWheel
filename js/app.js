@@ -567,45 +567,42 @@
     //  pickTarget — decides WHO the wheel must land on
     // ============================================================
     function pickTarget() {
-        // Build candidate pool from the actual wheel array
-        let candidates = wheelStudents.slice(); // shallow copy, same object refs
+        // ---- Whitelist phase: deterministic, in order ----
+        // If whitelist has X names, rotates 1..X pick them in exact order.
+        if (spinRoundCounter < whitelist.length) {
+            const wlName = normalizeName(whitelist[spinRoundCounter]);
 
-        // No-repeat: narrow to unselected students
+            // Find the matching student object on the wheel
+            const match = wheelStudents.find(s => normalizeName(s.name) === wlName);
+
+            console.log('[PICK] whitelist round', spinRoundCounter,
+                '| picking:', whitelist[spinRoundCounter],
+                '| normalized:', wlName,
+                '| match:', match ? match.name : 'NOT FOUND');
+
+            if (match) {
+                // In no-repeat mode, mark this student as selected
+                if (selectionMode === 'no-repeat') {
+                    selectedSet.add(studentKey(match));
+                }
+                spinRoundCounter++;
+                return match;
+            }
+            // Name not found on wheel — fall through to normal pick
+        }
+
+        // ---- Normal phase: random or no-repeat ----
+        let candidates = wheelStudents.slice();
+
         if (selectionMode === 'no-repeat') {
             const avail = candidates.filter(s => !selectedSet.has(studentKey(s)));
             if (avail.length === 0) {
-                selectedSet.clear(); // everyone picked, reset
+                selectedSet.clear();
             } else {
                 candidates = avail;
             }
         }
 
-        // Whitelist: force pick from whitelist during first 6 rounds
-        if (spinRoundCounter < 6 && whitelist.length > 0) {
-            // Build lookup of whitelist names (normalized)
-            const wlNorm = new Set(whitelist.map(normalizeName));
-
-            // Find wheel students whose normalized name is in the whitelist
-            // AND who haven't been whitelist-picked yet
-            const wlHits = candidates.filter(s => {
-                const nn = normalizeName(s.name);
-                return wlNorm.has(nn) && !whitelistPicked.has(nn);
-            });
-
-            console.log('[PICK] round', spinRoundCounter,
-                '| wlNorm:', [...wlNorm],
-                '| studentNames:', candidates.map(s => normalizeName(s.name)),
-                '| wlHits:', wlHits.map(s => s.name));
-
-            if (wlHits.length > 0) {
-                const pick = wlHits[Math.floor(Math.random() * wlHits.length)];
-                whitelistPicked.add(normalizeName(pick.name));
-                spinRoundCounter++;
-                return pick;
-            }
-        }
-
-        // Normal random pick from candidates
         spinRoundCounter++;
         return candidates[Math.floor(Math.random() * candidates.length)];
     }
