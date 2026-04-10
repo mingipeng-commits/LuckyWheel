@@ -542,14 +542,14 @@ const LuckyWheel = (() => {
         // Calculate total rotation needed to land on target
         let totalRotation;
         if (targetIndex >= 0 && targetIndex < n) {
-            const fullTurns = (baseTurns + extraTurns) * Math.PI * 2;
+            const fullTurns = Math.ceil(baseTurns + extraTurns) * Math.PI * 2;
             // Land in the middle of the target segment
             const targetAngle = -(targetIndex * sliceAngle + sliceAngle * (0.15 + Math.random() * 0.7));
             // Normalize so it's forward from current angle
             totalRotation = fullTurns + ((targetAngle - currentAngle) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2);
         } else {
             // Pure random: just pick a random total rotation
-            totalRotation = (baseTurns + extraTurns) * Math.PI * 2 + Math.random() * Math.PI * 2;
+            totalRotation = Math.ceil(baseTurns + extraTurns) * Math.PI * 2 + Math.random() * Math.PI * 2;
         }
 
         const finalAngle = currentAngle + totalRotation;
