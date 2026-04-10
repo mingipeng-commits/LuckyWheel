@@ -13,6 +13,14 @@
     let loadOrder = 'shuffle';    // 'shuffle' | 'original'
     let wheelStudents = [];       // the (possibly shuffled) array sent to the wheel
 
+    // ---- Admin (white/black list) ----
+    const ADMIN_WL_KEY = 'luckywheel_whitelist';
+    const ADMIN_BL_KEY = 'luckywheel_blacklist';
+    let whitelist = [];           // array of names (strings)
+    let blacklist = [];           // array of names (strings)
+    let spinRoundCounter = 0;     // resets when wheel loads
+    let whitelistPicked = new Set(); // whitelist names already picked this session
+
     // ---- LocalStorage helpers ----
     function saveStudents() {
         try {
@@ -34,6 +42,23 @@
 
     function clearSavedStudents() {
         try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
+    }
+
+    // ---- Admin list persistence ----
+    function saveAdminLists() {
+        try {
+            localStorage.setItem(ADMIN_WL_KEY, JSON.stringify(whitelist));
+            localStorage.setItem(ADMIN_BL_KEY, JSON.stringify(blacklist));
+        } catch (e) {}
+    }
+
+    function loadAdminLists() {
+        try {
+            const wl = localStorage.getItem(ADMIN_WL_KEY);
+            if (wl) whitelist = JSON.parse(wl).filter(n => typeof n === 'string' && n.trim());
+            const bl = localStorage.getItem(ADMIN_BL_KEY);
+            if (bl) blacklist = JSON.parse(bl).filter(n => typeof n === 'string' && n.trim());
+        } catch (e) {}
     }
 
     // ---- DOM Elements ----
@@ -393,6 +418,8 @@
 
     btnClearMemory.addEventListener('click', () => {
         selectedSet.clear();
+        spinRoundCounter = 0;
+        whitelistPicked = new Set();
         btnClearMemory.textContent = '重置';
     });
 
@@ -482,6 +509,10 @@
         if (loadOrder === 'shuffle') shuffleArray(wheelStudents);
         LuckyWheel.setStudents(wheelStudents);
 
+        // Reset admin round tracking
+        spinRoundCounter = 0;
+        whitelistPicked = new Set();
+
         Effects.initConfetti();
 
         Effects.hideWinnerBurst();
@@ -545,25 +576,62 @@
 
         if (LuckyWheel.isCurrentlySpinning()) return;
 
-        // Determine target index for no-repeat mode
+        // Determine target index — respects blacklist & whitelist
         let targetIndex = -1; // -1 = pure random
 
+        // Build the candidate pool
+        let pool;
         if (selectionMode === 'no-repeat') {
-            // Find available (not-yet-selected) students
-            let available = students.filter(s => !selectedSet.has(studentKey(s)));
-            if (available.length === 0) {
-                // All selected — auto reset
+            pool = students.filter(s => !selectedSet.has(studentKey(s)));
+            if (pool.length === 0) {
                 selectedSet.clear();
-                available = [...students];
+                pool = [...students];
             }
+        } else {
+            pool = [...students];
+        }
 
-            // Pick a random one from the available pool
-            const chosen = available[Math.floor(Math.random() * available.length)];
+        // Remove blacklisted names from pool
+        if (blacklist.length > 0) {
+            const blSet = new Set(blacklist.map(n => n.toLowerCase()));
+            pool = pool.filter(s => !blSet.has(s.name.toLowerCase()));
+            // If blacklist removed everyone, fall back to full pool
+            if (pool.length === 0) {
+                pool = selectionMode === 'no-repeat'
+                    ? students.filter(s => !selectedSet.has(studentKey(s)))
+                    : [...students];
+                if (pool.length === 0) {
+                    selectedSet.clear();
+                    pool = [...students];
+                }
+            }
+        }
 
-            // Find its index in the wheel's student array (may be shuffled)
-            targetIndex = wheelStudents.findIndex(s => studentKey(s) === studentKey(chosen));
+        // Whitelist: guarantee pick from whitelist in first 6 rounds
+        let chosen;
+        if (spinRoundCounter < 6 && whitelist.length > 0) {
+            const wlSet = new Set(whitelist.map(n => n.toLowerCase()));
+            const wlCandidates = pool.filter(s =>
+                wlSet.has(s.name.toLowerCase()) && !whitelistPicked.has(s.name.toLowerCase())
+            );
+            if (wlCandidates.length > 0) {
+                chosen = wlCandidates[Math.floor(Math.random() * wlCandidates.length)];
+                whitelistPicked.add(chosen.name.toLowerCase());
+            }
+        }
 
-            const remaining = available.length;
+        // If no whitelist pick, choose randomly from pool
+        if (!chosen) {
+            chosen = pool[Math.floor(Math.random() * pool.length)];
+        }
+
+        // Map to wheel index
+        targetIndex = wheelStudents.findIndex(s => studentKey(s) === studentKey(chosen));
+
+        spinRoundCounter++;
+
+        if (selectionMode === 'no-repeat') {
+            const remaining = pool.length;
             btnClearMemory.textContent = `重置 (${remaining}/${students.length})`;
         }
 
@@ -634,8 +702,69 @@
     // Prevent default touch behavior
     btnSpin.style.touchAction = 'none';
 
-    // ---- Startup: restore saved students ----
+    // ---- Secret Admin Mode ----
+    const adminOverlay = document.getElementById('admin-overlay');
+    const adminWhitelistEl = document.getElementById('admin-whitelist');
+    const adminBlacklistEl = document.getElementById('admin-blacklist');
+    const adminSaveBtn = document.getElementById('admin-save');
+    const adminCloseBtn = document.getElementById('admin-close');
+    const titleEl = document.querySelector('.title');
+
+    // Secret entrance 1: click the title 5 times within 3 seconds
+    let titleClicks = [];
+    if (titleEl) {
+        titleEl.addEventListener('click', () => {
+            const now = Date.now();
+            titleClicks.push(now);
+            // Keep only clicks within last 3 seconds
+            titleClicks = titleClicks.filter(t => now - t < 3000);
+            if (titleClicks.length >= 5) {
+                titleClicks = [];
+                openAdmin();
+            }
+        });
+    }
+
+    // Secret entrance 2: Ctrl+Shift+A anywhere
+    document.addEventListener('keydown', (e) => {
+        if (e.ctrlKey && e.shiftKey && e.key === 'A') {
+            e.preventDefault();
+            openAdmin();
+        }
+    });
+
+    function openAdmin() {
+        adminWhitelistEl.value = whitelist.join('\n');
+        adminBlacklistEl.value = blacklist.join('\n');
+        adminOverlay.classList.remove('hidden');
+    }
+
+    function closeAdmin() {
+        adminOverlay.classList.add('hidden');
+    }
+
+    adminCloseBtn.addEventListener('click', closeAdmin);
+
+    adminOverlay.addEventListener('click', (e) => {
+        if (e.target === adminOverlay) closeAdmin();
+    });
+
+    adminSaveBtn.addEventListener('click', () => {
+        whitelist = adminWhitelistEl.value
+            .split('\n')
+            .map(s => s.trim())
+            .filter(s => s.length > 0);
+        blacklist = adminBlacklistEl.value
+            .split('\n')
+            .map(s => s.trim())
+            .filter(s => s.length > 0);
+        saveAdminLists();
+        closeAdmin();
+    });
+
+    // ---- Startup: restore saved students & admin lists ----
     loadStudents();
+    loadAdminLists();
     if (students.length > 0) {
         updateStudentList();
     }
