@@ -577,60 +577,53 @@
         if (LuckyWheel.isCurrentlySpinning()) return;
 
         // Determine target index — respects blacklist & whitelist
-        let targetIndex = -1; // -1 = pure random
+        // Always pick from wheelStudents (the actual wheel) so indexOf is reliable
+        let candidates = [...wheelStudents];
 
-        // Build the candidate pool
-        let pool;
+        // 1. Apply blacklist — remove blacklisted names
+        if (blacklist.length > 0) {
+            const blNames = new Set(blacklist.map(n => n.trim().toLowerCase()));
+            const filtered = candidates.filter(s => !blNames.has(s.name.trim().toLowerCase()));
+            if (filtered.length > 0) candidates = filtered;
+        }
+
+        // 2. Apply no-repeat — remove already-selected
         if (selectionMode === 'no-repeat') {
-            pool = students.filter(s => !selectedSet.has(studentKey(s)));
-            if (pool.length === 0) {
+            const available = candidates.filter(s => !selectedSet.has(studentKey(s)));
+            if (available.length === 0) {
                 selectedSet.clear();
-                pool = [...students];
-            }
-        } else {
-            pool = [...students];
-        }
-
-        // Build blacklist set once for reuse
-        const blSet = blacklist.length > 0
-            ? new Set(blacklist.map(n => n.trim().toLowerCase()))
-            : null;
-
-        // Remove blacklisted names from pool
-        if (blSet) {
-            pool = pool.filter(s => !blSet.has(s.name.trim().toLowerCase()));
-            // If blacklist + no-repeat removed everyone, reset no-repeat but keep blacklist
-            if (pool.length === 0 && selectionMode === 'no-repeat') {
-                selectedSet.clear();
-                pool = students.filter(s => !blSet.has(s.name.trim().toLowerCase()));
+                // candidates stays as-is (all non-blacklisted)
+            } else {
+                candidates = available;
             }
         }
 
-        // Whitelist: guarantee pick from whitelist in first 6 rounds
-        let chosen;
-        if (pool.length > 0 && spinRoundCounter < 6 && whitelist.length > 0) {
-            const wlSet = new Set(whitelist.map(n => n.trim().toLowerCase()));
-            const wlCandidates = pool.filter(s =>
-                wlSet.has(s.name.trim().toLowerCase()) && !whitelistPicked.has(s.name.trim().toLowerCase())
+        // 3. Whitelist — guarantee pick from whitelist in first 6 rounds
+        let chosen = null;
+        if (spinRoundCounter < 6 && whitelist.length > 0) {
+            const wlNames = new Set(whitelist.map(n => n.trim().toLowerCase()));
+            const wlPicks = candidates.filter(s =>
+                wlNames.has(s.name.trim().toLowerCase()) &&
+                !whitelistPicked.has(s.name.trim().toLowerCase())
             );
-            if (wlCandidates.length > 0) {
-                chosen = wlCandidates[Math.floor(Math.random() * wlCandidates.length)];
+            if (wlPicks.length > 0) {
+                chosen = wlPicks[Math.floor(Math.random() * wlPicks.length)];
                 whitelistPicked.add(chosen.name.trim().toLowerCase());
             }
         }
 
-        // If no whitelist pick, choose randomly from pool
+        // 4. If no whitelist pick, random from candidates
         if (!chosen) {
-            chosen = pool[Math.floor(Math.random() * pool.length)];
+            chosen = candidates[Math.floor(Math.random() * candidates.length)];
         }
 
-        // Map to wheel index
-        targetIndex = wheelStudents.findIndex(s => studentKey(s) === studentKey(chosen));
+        // 5. Map to wheel index — use indexOf (same object references, always reliable)
+        const targetIndex = wheelStudents.indexOf(chosen);
 
         spinRoundCounter++;
 
         if (selectionMode === 'no-repeat') {
-            const remaining = pool.length;
+            const remaining = candidates.length;
             btnClearMemory.textContent = `重置 (${remaining}/${students.length})`;
         }
 
