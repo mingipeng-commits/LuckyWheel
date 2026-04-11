@@ -1036,6 +1036,45 @@ select.form-input option {
     animation: slideIn 0.2s ease;
 }
 
+.admin-wl-row.blacklist {
+    opacity: 0.75;
+}
+
+.admin-wl-type {
+    flex-shrink: 0;
+    padding: 5px 8px;
+    border-radius: 6px;
+    border: 1px solid rgba(0, 255, 128, 0.4);
+    background: rgba(0, 255, 128, 0.1);
+    color: #66ffaa;
+    font-size: 0.72rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    min-width: 46px;
+    text-align: center;
+}
+
+.admin-wl-type:hover {
+    filter: brightness(1.2);
+}
+
+.admin-wl-type.blacklist {
+    border-color: rgba(255, 68, 68, 0.5);
+    background: rgba(255, 68, 68, 0.15);
+    color: #ff6666;
+}
+
+.admin-wl-round.hidden-round {
+    visibility: hidden;
+    width: 0;
+    padding: 0;
+    border: none;
+    margin: 0;
+    min-width: 0;
+    overflow: hidden;
+}
+
 .admin-wl-serial {
     flex-shrink: 0;
     width: 24px;
