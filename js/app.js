@@ -8,7 +8,7 @@
     let students = [];
     let history = [];           // last N spin results
     const MAX_HISTORY = 30;
-    let selectionMode = 'random'; // 'random' | 'no-repeat'
+    let selectionMode = 'no-repeat'; // 'random' | 'no-repeat'
     let selectedSet = new Set();  // names already selected in no-repeat mode
     let loadOrder = 'shuffle';    // 'shuffle' | 'original'
     let wheelStudents = [];       // the (possibly shuffled) array sent to the wheel
@@ -597,15 +597,16 @@
                 // If this name was already picked in a previous round, skip
                 // the whitelist override and fall through to normal selection
                 if (selectedSet.has(studentKey(match))) {
-                    console.log('[PICK] whitelist name already picked, using normal selection');
+                    console.log('[PICK] whitelist name already picked, skipping to normal selection');
                 } else {
-                    // In no-repeat mode, mark this student as selected
-                    if (selectionMode === 'no-repeat') {
-                        selectedSet.add(studentKey(match));
-                    }
+                    // Mark as selected so it won't repeat
+                    selectedSet.add(studentKey(match));
                     spinRoundCounter++;
                     return match;
                 }
+            } else {
+                // Name not on the wheel — skip this whitelist entry entirely
+                console.log('[PICK] whitelist name not found on wheel, skipping to normal selection');
             }
             // Name not found or already picked — fall through to normal pick
         }
