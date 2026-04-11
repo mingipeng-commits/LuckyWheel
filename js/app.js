@@ -590,17 +590,24 @@
             console.log('[PICK] round', currentRound,
                 '| whitelist entry:', wlEntry.name, '(round', wlEntry.round + ')',
                 '| normalized:', wlName,
-                '| match:', match ? match.name : 'NOT FOUND');
+                '| match:', match ? match.name : 'NOT FOUND',
+                '| alreadyPicked:', match ? selectedSet.has(studentKey(match)) : false);
 
             if (match) {
-                // In no-repeat mode, mark this student as selected
-                if (selectionMode === 'no-repeat') {
-                    selectedSet.add(studentKey(match));
+                // If this name was already picked in a previous round, skip
+                // the whitelist override and fall through to normal selection
+                if (selectedSet.has(studentKey(match))) {
+                    console.log('[PICK] whitelist name already picked, using normal selection');
+                } else {
+                    // In no-repeat mode, mark this student as selected
+                    if (selectionMode === 'no-repeat') {
+                        selectedSet.add(studentKey(match));
+                    }
+                    spinRoundCounter++;
+                    return match;
                 }
-                spinRoundCounter++;
-                return match;
             }
-            // Name not found on wheel — fall through to normal pick
+            // Name not found or already picked — fall through to normal pick
         }
 
         // ---- Normal phase: random or no-repeat ----
