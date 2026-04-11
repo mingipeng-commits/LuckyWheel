@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>幸運轉盤</title>
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/style.css?v=8">
 </head>
 <body>
     <!-- Winner Display Banner -->
@@ -128,8 +128,9 @@
         <div class="admin-panel">
             <h2 class="admin-title">管理員模式</h2>
             <div class="admin-section">
-                <label class="admin-label">超級幸運星 <span class="admin-hint">（前6輪保證抽中）</span></label>
-                <textarea id="admin-whitelist" class="admin-textarea" placeholder="每行輸入一個姓名" rows="8"></textarea>
+                <label class="admin-label">超級幸運星 <span class="admin-hint">（指定輪次保證抽中）</span></label>
+                <div id="admin-whitelist-entries" class="admin-wl-entries"></div>
+                <button id="admin-add-entry" class="btn-admin-add">+ 新增</button>
             </div>
             <div class="admin-actions">
                 <button id="admin-save" class="btn-admin-save">儲存</button>
@@ -140,9 +141,9 @@
 
     <!-- Scripts -->
     <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
-    <script src="js/sound.js?v=7"></script>
-    <script src="js/effects.js?v=7"></script>
-    <script src="js/wheel.js?v=7"></script>
-    <script src="js/app.js?v=7"></script>
+    <script src="js/sound.js?v=8"></script>
+    <script src="js/effects.js?v=8"></script>
+    <script src="js/wheel.js?v=8"></script>
+    <script src="js/app.js?v=8"></script>
 </body>
 </html>

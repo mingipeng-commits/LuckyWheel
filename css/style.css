@@ -1009,6 +1009,126 @@ select.form-input option {
     color: rgba(176, 176, 204, 0.5);
 }
 
+/* Whitelist structured entries */
+.admin-wl-entries {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 320px;
+    overflow-y: auto;
+    margin-bottom: 12px;
+    padding-right: 4px;
+}
+
+.admin-wl-entries::-webkit-scrollbar {
+    width: 5px;
+}
+
+.admin-wl-entries::-webkit-scrollbar-thumb {
+    background: rgba(255, 0, 255, 0.3);
+    border-radius: 3px;
+}
+
+.admin-wl-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    animation: slideIn 0.2s ease;
+}
+
+.admin-wl-serial {
+    flex-shrink: 0;
+    width: 24px;
+    text-align: center;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    font-weight: 600;
+}
+
+.admin-wl-round {
+    width: 64px;
+    flex-shrink: 0;
+    padding: 8px 6px;
+    background: var(--bg-card);
+    border: 1px solid rgba(255, 0, 255, 0.2);
+    border-radius: 8px;
+    color: var(--neon-cyan);
+    font-size: 0.9rem;
+    font-weight: 700;
+    text-align: center;
+    outline: none;
+    transition: border-color 0.3s;
+}
+
+.admin-wl-round:focus {
+    border-color: var(--neon-cyan);
+    box-shadow: 0 0 8px rgba(0, 255, 255, 0.2);
+}
+
+.admin-wl-name {
+    flex: 1;
+    min-width: 0;
+    padding: 8px 12px;
+    background: var(--bg-card);
+    border: 1px solid rgba(255, 0, 255, 0.2);
+    border-radius: 8px;
+    color: var(--text-primary);
+    font-size: 0.9rem;
+    outline: none;
+    transition: border-color 0.3s;
+}
+
+.admin-wl-name:focus {
+    border-color: var(--neon-pink);
+    box-shadow: 0 0 8px rgba(255, 0, 255, 0.2);
+}
+
+.admin-wl-name::placeholder,
+.admin-wl-round::placeholder {
+    color: rgba(176, 176, 204, 0.4);
+}
+
+.admin-wl-delete {
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    background: none;
+    border: 1px solid rgba(255, 68, 68, 0.3);
+    border-radius: 6px;
+    color: rgba(255, 100, 100, 0.7);
+    font-size: 1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.admin-wl-delete:hover {
+    color: #ff4444;
+    background: rgba(255, 68, 68, 0.15);
+    border-color: #ff4444;
+}
+
+.btn-admin-add {
+    width: 100%;
+    padding: 8px;
+    background: rgba(0, 255, 255, 0.08);
+    border: 1px dashed rgba(0, 255, 255, 0.3);
+    border-radius: 8px;
+    color: var(--neon-cyan);
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-bottom: 12px;
+}
+
+.btn-admin-add:hover {
+    background: rgba(0, 255, 255, 0.15);
+    border-color: var(--neon-cyan);
+}
+
 .admin-actions {
     display: flex;
     gap: 12px;

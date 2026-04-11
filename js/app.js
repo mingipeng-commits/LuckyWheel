@@ -15,7 +15,7 @@
 
     // ---- Admin (whitelist only) ----
     const ADMIN_WL_KEY = 'luckywheel_whitelist';
-    let whitelist = [];           // array of names (strings)
+    let whitelist = [];           // array of {name: string, round: number}
     let spinRoundCounter = 0;     // resets when wheel loads or admin saves
     let whitelistPicked = new Set(); // whitelist names already picked this session
 
@@ -57,7 +57,16 @@
             if (wl) {
                 const parsed = JSON.parse(wl);
                 if (Array.isArray(parsed)) {
-                    whitelist = parsed.filter(n => typeof n === 'string' && n.trim());
+                    // Support old format (string[]) and new format ({name,round}[])
+                    whitelist = parsed.map((entry, i) => {
+                        if (typeof entry === 'string') {
+                            return { name: entry.trim(), round: i + 1 };
+                        }
+                        if (entry && typeof entry.name === 'string') {
+                            return { name: entry.name.trim(), round: entry.round || (i + 1) };
+                        }
+                        return null;
+                    }).filter(e => e && e.name);
                 }
             }
         } catch (e) {}
@@ -567,16 +576,19 @@
     //  pickTarget — decides WHO the wheel must land on
     // ============================================================
     function pickTarget() {
-        // ---- Whitelist phase: deterministic, in order ----
-        // If whitelist has X names, rotates 1..X pick them in exact order.
-        if (spinRoundCounter < whitelist.length) {
-            const wlName = normalizeName(whitelist[spinRoundCounter]);
+        // ---- Whitelist phase: pick by assigned round number ----
+        // spinRoundCounter is 0-based; round numbers are 1-based
+        const currentRound = spinRoundCounter + 1;
+        const wlEntry = whitelist.find(e => e.round === currentRound);
+
+        if (wlEntry) {
+            const wlName = normalizeName(wlEntry.name);
 
             // Find the matching student object on the wheel
             const match = wheelStudents.find(s => normalizeName(s.name) === wlName);
 
-            console.log('[PICK] whitelist round', spinRoundCounter,
-                '| picking:', whitelist[spinRoundCounter],
+            console.log('[PICK] round', currentRound,
+                '| whitelist entry:', wlEntry.name, '(round', wlEntry.round + ')',
                 '| normalized:', wlName,
                 '| match:', match ? match.name : 'NOT FOUND');
 
@@ -696,7 +708,8 @@
 
     // ---- Secret Admin Mode ----
     const adminOverlay = document.getElementById('admin-overlay');
-    const adminWhitelistEl = document.getElementById('admin-whitelist');
+    const adminWlContainer = document.getElementById('admin-whitelist-entries');
+    const adminAddEntryBtn = document.getElementById('admin-add-entry');
     const adminSaveBtn = document.getElementById('admin-save');
     const adminCloseBtn = document.getElementById('admin-close');
     const titleEl = document.querySelector('.title');
@@ -723,8 +736,57 @@
         }
     });
 
+    function renderAdminWhitelist() {
+        adminWlContainer.innerHTML = '';
+        whitelist.forEach((entry, i) => {
+            addAdminWlRow(entry.name, entry.round, i);
+        });
+    }
+
+    function addAdminWlRow(name, round, index) {
+        const row = document.createElement('div');
+        row.className = 'admin-wl-row';
+        const serial = index !== undefined ? index : adminWlContainer.children.length;
+        row.innerHTML = `
+            <span class="admin-wl-serial">${serial + 1}.</span>
+            <input type="number" class="admin-wl-round" min="1" value="${round}" placeholder="輪" title="指定在第幾輪抽中">
+            <input type="text" class="admin-wl-name" value="${escapeHtml(name)}" placeholder="姓名">
+            <button class="admin-wl-delete" title="刪除">&times;</button>
+        `;
+        row.querySelector('.admin-wl-delete').addEventListener('click', () => {
+            row.remove();
+            reindexAdminRows();
+        });
+        adminWlContainer.appendChild(row);
+    }
+
+    function reindexAdminRows() {
+        adminWlContainer.querySelectorAll('.admin-wl-row').forEach((row, i) => {
+            row.querySelector('.admin-wl-serial').textContent = (i + 1) + '.';
+        });
+    }
+
+    adminAddEntryBtn.addEventListener('click', () => {
+        const nextRound = getNextAvailableRound();
+        addAdminWlRow('', nextRound);
+        const rows = adminWlContainer.querySelectorAll('.admin-wl-row');
+        const lastRow = rows[rows.length - 1];
+        lastRow.querySelector('.admin-wl-name').focus();
+    });
+
+    function getNextAvailableRound() {
+        const usedRounds = new Set();
+        adminWlContainer.querySelectorAll('.admin-wl-round').forEach(input => {
+            const v = parseInt(input.value);
+            if (v > 0) usedRounds.add(v);
+        });
+        let r = 1;
+        while (usedRounds.has(r)) r++;
+        return r;
+    }
+
     function openAdmin() {
-        adminWhitelistEl.value = whitelist.join('\n');
+        renderAdminWhitelist();
         adminOverlay.classList.remove('hidden');
     }
 
@@ -739,16 +801,21 @@
     });
 
     adminSaveBtn.addEventListener('click', () => {
-        whitelist = adminWhitelistEl.value
-            .split('\n')
-            .map(s => s.replace(/[\u200B-\u200D\uFEFF\u00A0\u2060\u2028\u2029\r]/g, '').trim())
-            .filter(s => s.length > 0);
+        whitelist = [];
+        adminWlContainer.querySelectorAll('.admin-wl-row').forEach(row => {
+            const name = row.querySelector('.admin-wl-name').value
+                .replace(/[\u200B-\u200D\uFEFF\u00A0\u2060\u2028\u2029\r]/g, '').trim();
+            const round = parseInt(row.querySelector('.admin-wl-round').value) || 1;
+            if (name) {
+                whitelist.push({ name, round });
+            }
+        });
         saveWhitelist();
         spinRoundCounter = 0;
         whitelistPicked = new Set();
 
         console.log('[ADMIN] whitelist saved:', whitelist);
-        console.log('[ADMIN] normalized:', whitelist.map(normalizeName));
+        console.log('[ADMIN] normalized:', whitelist.map(e => ({ name: normalizeName(e.name), round: e.round })));
 
         // Visual confirmation
         adminSaveBtn.textContent = '已儲存!';
@@ -763,7 +830,7 @@
     // ---- Startup ----
     loadStudents();
     loadWhitelist();
-    console.log('[INIT] whitelist loaded:', whitelist);
+    console.log('[INIT] whitelist loaded:', whitelist.map(e => `${e.name}@round${e.round}`));
     if (students.length > 0) {
         updateStudentList();
     }
